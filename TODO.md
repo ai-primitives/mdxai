@@ -1,5 +1,14 @@
 # Project Status and Tasks
 
+## Blockers
+- [ ] Missing CI Configuration
+  - Error: No GitHub Actions workflows found in repository
+  - Impact: Preventing PR checks and automated testing
+  - Details: Repository lacks CI configuration for running tests and checks
+  - Location: Missing .github/workflows directory and workflow files
+  - Status: Requires CI setup for automated testing
+  - Workaround: Tests can be run locally using `pnpm test`
+
 ## Implementation
 
 - [x] Core functionality
