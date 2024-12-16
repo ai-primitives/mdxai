@@ -1,68 +1,73 @@
-# @ai-primitives/package-template
+# @ai-primitives/mdxai
 
-[![npm version](https://badge.fury.io/js/%40ai-primitives%2Fpackage-template.svg)](https://www.npmjs.com/package/@ai-primitives/package-template)
+[![npm version](https://badge.fury.io/js/%40ai-primitives%2Fmdxai.svg)](https://www.npmjs.com/package/@ai-primitives/mdxai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A modern TypeScript package template with Vitest, Prettier, ESLint, and semantic versioning.
+Zero-config CLI to recursively generate and update MDX structured data, unstructured content, import/export Javascript/Typescript, and JSX/Reach UI components using MDXLD (Linked Data).
 
 ## Features
 
-- 🚀 TypeScript for type safety and modern JavaScript features
-- ⚡️ Vitest for fast, modern testing
-- 🎨 Prettier for consistent code formatting
-- 🔍 ESLint for code quality
-- 📦 Semantic versioning with automated releases
-- 🔄 GitHub Actions for CI/CD
+- 🚀 Zero-config MDX generation and updates
+- 📝 Support for schema.org, gs1.org, and mdx.org.ai contexts
+- 🔄 Recursive directory processing
+- 🌐 Browser and edge runtime compatible
+- ⚡️ CLI powered by fs/promises for Node.js environments
+- 💻 Import/export JavaScript/TypeScript
+- 🎨 JSX/React UI component support
 
 ## Installation
 
 ```bash
-pnpm add @ai-primitives/package-template
+pnpm add @ai-primitives/mdxai
 ```
 
 ## Usage
 
-```typescript
-import { add } from '@ai-primitives/package-template'
-
-const result = add(1, 2) // returns 3
-```
-
-## Development
+### CLI Usage
 
 ```bash
-# Install dependencies
-pnpm install
+# Generate MDX from a directory
+mdxai generate ./content --type="https://schema.org/Article"
 
-# Run tests
-pnpm test
+# Process multiple files recursively
+mdxai generate ./blog/**/*.mdx --type="https://schema.org/BlogPosting"
 
-# Run tests in watch mode
-pnpm test:watch
-
-# Build the package
-pnpm build
-
-# Lint the code
-pnpm lint
-
-# Format the code
-pnpm format
+# Import JavaScript/TypeScript
+mdxai generate ./docs --type="https://mdx.org.ai/TypeScript"
 ```
 
-## Contributing
+### YAML-LD Frontmatter
 
-Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about our development process and how to propose bugfixes and improvements.
+```yaml
+# Using $ prefix for YAML-LD properties
+$type: https://schema.org/Article
+$context: https://schema.org
+title: My Article
+description: An example article
+```
 
-## License
+### Browser/Edge Usage
 
-MIT © [AI Primitives](https://mdx.org.ai)
+```typescript
+import { generateMDX } from '@ai-primitives/mdxai'
+
+const mdx = await generateMDX({
+  type: 'https://schema.org/Article',
+  content: '# My Article',
+  components: ['Button', 'Card'], // Optional JSX components
+})
+```
 
 ## Dependencies
 
-This package uses the following key dependencies:
+This package uses:
 
-- TypeScript for static typing
-- Vitest for testing
-- ESLint for linting
-- Prettier for code formatting
+- @ai-primitives/mdxld for MDX Linked Data processing
+- @ai-primitives/ai-functions for AI-powered content generation
+- fs/promises (Node.js only) for CLI operations
+
+## Runtime Compatibility
+
+- CLI features use fs/promises and are Node.js only
+- Main package exports are compatible with browser and edge runtimes
+- Component generation works in all environments

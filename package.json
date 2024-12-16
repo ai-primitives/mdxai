@@ -1,13 +1,13 @@
 {
-  "name": "package-template",
+  "name": "@ai-primitives/mdxai",
   "version": "0.1.0",
-  "description": "A modern TypeScript package template with Vitest, Prettier, ESLint, and semantic versioning",
+  "description": "Zero-config CLI to recursively generate and update MDX structured data using MDXLD",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "package-template": "bin/cli.js"
+    "mdxai": "bin/cli.js"
   },
   "files": [
     "dist",
@@ -22,20 +22,26 @@
     "prepublishOnly": "pnpm run build"
   },
   "keywords": [
-    "typescript",
-    "template",
-    "package",
-    "cli"
+    "mdx",
+    "mdxld",
+    "cli",
+    "ai",
+    "linked-data",
+    "typescript"
   ],
   "author": "AI Primitives",
   "license": "MIT",
   "homepage": "https://mdx.org.ai",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ai-primitives/package-template.git"
+    "url": "git+https://github.com/ai-primitives/mdxai.git"
   },
   "bugs": {
-    "url": "https://github.com/ai-primitives/package-template/issues"
+    "url": "https://github.com/ai-primitives/mdxai/issues"
+  },
+  "dependencies": {
+    "@ai-primitives/mdxld": "^1.0.0",
+    "@ai-primitives/ai-functions": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
