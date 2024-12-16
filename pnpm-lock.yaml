@@ -12,8 +12,8 @@ importers:
         specifier: ^0.2.19
         version: 0.2.19
       mdxld:
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.1
+        version: 0.1.1
       p-queue:
         specifier: ^7.4.1
         version: 7.4.1
@@ -1380,8 +1380,8 @@ packages:
     engines: {node: '>= 18'}
     hasBin: true
 
-  mdxld@0.1.0:
-    resolution: {integrity: sha512-0jFcdojOwcJfNuwV6BsGmbMnNUMGFrIPHnz3sf+VYQnJyh+QVERBKYAJyrstQClQUHWiRD4NHyIbQRj94b77cw==}
+  mdxld@0.1.1:
+    resolution: {integrity: sha512-5IOXSn6gDFssXTA0WQfc6YS+jXFNzLY44JOglzZOTDLdnZRNs73PlQwpwbcSmyk4BCOOjVHf3/wECP4n0z4KoA==}
 
   memory-pager@1.5.0:
     resolution: {integrity: sha512-ZS4Bp4r/Zoeq6+NLJpP+0Zzm0pR8whtGPf1XExKLJBAczGMnSi3It14OiNCStjQjM6NU1okjQGSxgEZN8eBYKg==}
@@ -3578,7 +3578,7 @@ snapshots:
 
   marked@12.0.2: {}
 
-  mdxld@0.1.0:
+  mdxld@0.1.1:
     dependencies:
       unified: 11.0.5
       unist-util-visit: 5.0.0

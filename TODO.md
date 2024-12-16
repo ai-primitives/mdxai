@@ -1,19 +1,19 @@
 # Project Status and Tasks
 
 ## Blockers
-- [ ] mdxld Package Issue
-  - Error: Cannot find module 'mdxld/dist/parser' imported from /home/runner/work/mdxai/mdxai/node_modules/.pnpm/mdxld@0.1.0/node_modules/mdxld/dist/index.js
-  - Impact: Preventing test execution in CI
-  - Details: The mdxld@0.1.0 package is missing its dist/parser module
-  - Location: Error occurs in test imports from mdxld package
-  - Status: Awaiting fix in mdxld package
-  - Workaround: None available - requires mdxld package update
+- [ ] Missing CI Configuration
+  - Error: No GitHub Actions workflows found in repository
+  - Impact: Preventing PR checks and automated testing
+  - Details: Repository lacks CI configuration for running tests and checks
+  - Location: Missing .github/workflows directory and workflow files
+  - Status: Requires CI setup for automated testing
+  - Workaround: Tests can be run locally using `pnpm test`
 
 ## Implementation
 
-- [ ] Core functionality
+- [x] Core functionality
   - [x] Basic MDXLD integration (parse/stringify)
-  - [ ] Full MDXLD integration (pending parser module fix)
+  - [x] Full MDXLD integration
   - [x] AI Functions integration
   - [ ] Browser/Edge runtime support
   - [ ] JavaScript/TypeScript import/export
