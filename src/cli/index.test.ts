@@ -38,4 +38,42 @@ describe('CLI', () => {
     expect(consoleSpy).toHaveBeenCalled()
     consoleSpy.mockRestore()
   })
+
+  it('should parse type option correctly', () => {
+    const options = parseArgs(['--type', 'https://schema.org/Article'])
+    expect(options.type).toBe('https://schema.org/Article')
+  })
+
+  it('should parse concurrency option correctly', () => {
+    const options = parseArgs(['--concurrency', '4'])
+    expect(options.concurrency).toBe(4)
+  })
+
+  it('should parse generate command with input paths', () => {
+    const options = parseArgs(['generate', './content', './docs'])
+    expect(options.input).toEqual(['./content', './docs'])
+  })
+
+  it('should parse multiple options together', () => {
+    const options = parseArgs([
+      'generate',
+      './content',
+      '--type',
+      'https://schema.org/Article',
+      '--concurrency',
+      '4'
+    ])
+    expect(options).toEqual({
+      input: ['./content'],
+      type: 'https://schema.org/Article',
+      concurrency: 4
+    })
+  })
+
+  it('should show help when no type is provided with generate', async () => {
+    const consoleSpy = vi.spyOn(console, 'log')
+    await cli(['generate', './content'])
+    expect(consoleSpy).toHaveBeenCalled()
+    consoleSpy.mockRestore()
+  })
 })
