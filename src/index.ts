@@ -1,6 +1,6 @@
 import { Readable } from 'node:stream'
 import { AI } from 'ai-functions'
-import { parse, stringify, type MDXLD } from 'mdxld'
+import { parse, stringify } from 'mdxld'
 
 export interface GenerateOptions {
   type: string
