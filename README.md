@@ -1,6 +1,6 @@
-# @ai-primitives/mdxai
+# mdxai
 
-[![npm version](https://badge.fury.io/js/%40ai-primitives%2Fmdxai.svg)](https://www.npmjs.com/package/@ai-primitives/mdxai)
+[![npm version](https://badge.fury.io/js/mdxai.svg)](https://www.npmjs.com/package/mdxai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Zero-config CLI to recursively generate and update MDX structured data, unstructured content, import/export Javascript/Typescript, and JSX/Reach UI components using MDXLD (Linked Data).
@@ -18,7 +18,7 @@ Zero-config CLI to recursively generate and update MDX structured data, unstruct
 ## Installation
 
 ```bash
-pnpm add @ai-primitives/mdxai
+pnpm add mdxai
 ```
 
 ## Usage
@@ -49,7 +49,7 @@ description: An example article
 ### Browser/Edge Usage
 
 ```typescript
-import { generateMDX } from '@ai-primitives/mdxai'
+import { generateMDX } from 'mdxai'
 
 const mdx = await generateMDX({
   type: 'https://schema.org/Article',
@@ -62,8 +62,8 @@ const mdx = await generateMDX({
 
 This package uses:
 
-- @ai-primitives/mdxld for MDX Linked Data processing
-- @ai-primitives/ai-functions for AI-powered content generation
+- mdxld for MDX Linked Data processing
+- ai-functions for AI-powered content generation
 - fs/promises (Node.js only) for CLI operations
 
 ## Runtime Compatibility

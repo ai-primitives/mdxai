@@ -1,5 +1,5 @@
 {
-  "name": "@ai-primitives/mdxai",
+  "name": "mdxai",
   "version": "0.1.0",
   "description": "Zero-config CLI to recursively generate and update MDX structured data using MDXLD",
   "type": "module",
@@ -40,8 +40,8 @@
     "url": "https://github.com/ai-primitives/mdxai/issues"
   },
   "dependencies": {
-    "@ai-primitives/mdxld": "^1.0.0",
-    "@ai-primitives/ai-functions": "^1.0.0"
+    "mdxld": "^0.1.0",
+    "ai-functions": "^0.2.19"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
