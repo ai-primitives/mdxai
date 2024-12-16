@@ -28,6 +28,8 @@ Or use with npx:
 npx mdxai generate ./content --type="https://schema.org/Article"
 ```
 
+Note: This package depends on mdxld@0.1.0. There is a known issue with the parser module in this version that affects test execution. Production functionality using the main exports remains unaffected.
+
 ## CLI Usage
 
 Generate MDX content with real-time progress streaming:
@@ -123,3 +125,4 @@ This package uses:
   - Error: Cannot find module '/home/runner/work/mdxai/mdxai/node_modules/.pnpm/mdxld@0.1.0/node_modules/mdxld/dist/parser'
   - Impact: Prevents test suite execution in CI environment
   - Status: This issue will be addressed in a future update of the mdxld package
+  - Note: Production functionality using the main exports remains unaffected

@@ -2,17 +2,19 @@
 
 ## Blockers
 - [ ] mdxld Package Issue
-  - Error: Cannot find module 'mdxld/dist/parser'
+  - Error: Cannot find module 'mdxld/dist/parser' imported from /home/runner/work/mdxai/mdxai/node_modules/.pnpm/mdxld@0.1.0/node_modules/mdxld/dist/index.js
   - Impact: Preventing test execution in CI
   - Details: The mdxld@0.1.0 package is missing its dist/parser module
   - Location: Error occurs in test imports from mdxld package
   - Status: Awaiting fix in mdxld package
+  - Workaround: None available - requires mdxld package update
 
 ## Implementation
 
 - [ ] Core functionality
-  - [ ] MDXLD integration
-  - [ ] AI Functions integration
+  - [x] Basic MDXLD integration (parse/stringify)
+  - [ ] Full MDXLD integration (pending parser module fix)
+  - [x] AI Functions integration
   - [ ] Browser/Edge runtime support
   - [ ] JavaScript/TypeScript import/export
   - [ ] JSX/React UI component support
