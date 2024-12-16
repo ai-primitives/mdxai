@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "ai-functions": "^0.2.19",
-    "mdxld": "^0.1.0",
+    "mdxld": "^0.1.1",
     "p-queue": "^7.4.1"
   },
   "devDependencies": {
