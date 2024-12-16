@@ -1,14 +1,14 @@
-# Contributing to @ai-primitives/package-template
+# Contributing to mdxai
 
-Thank you for your interest in contributing to our package template! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to mdxai! This document provides guidelines and instructions for contributing.
 
 ## Development Setup
 
 1. Fork and clone the repository:
 
 ```bash
-git clone https://github.com/ai-primitives/package-template.git
-cd package-template
+git clone https://github.com/ai-primitives/mdxai.git
+cd mdxai
 ```
 
 2. Install dependencies:
@@ -83,6 +83,16 @@ pnpm build
 ```
 
 The build output will be in the `dist` directory.
+
+## CLI Development
+
+When working on CLI features:
+
+1. Ensure fs/promises usage is limited to CLI-specific code
+2. Test both global installation and npx execution
+3. Verify streaming output functionality
+4. Test concurrent file processing
+5. Maintain browser/edge runtime compatibility for non-CLI exports
 
 ## Commit Guidelines
 
