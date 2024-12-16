@@ -3,7 +3,7 @@
 [![npm version](https://badge.fury.io/js/mdxai.svg)](https://www.npmjs.com/package/mdxai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Zero-config CLI to recursively generate and update MDX structured data, unstructured content, import/export Javascript/Typescript, and JSX/Reach UI components using MDXLD (Linked Data).
+Zero-config CLI to recursively generate and update MDX structured data, unstructured content, import/export Javascript/TypeScript, and JSX/Reach UI components using MDXLD (Linked Data).
 
 ## Features
 
@@ -33,21 +33,27 @@ npx mdxai generate ./content --type="https://schema.org/Article"
 Generate MDX content with real-time progress streaming:
 
 ```bash
-# Generate MDX from a directory
+# Generate MDX from a directory using schema.org
 mdxai generate ./content --type="https://schema.org/Article"
 
-# Process multiple files recursively
-mdxai generate ./blog/**/*.mdx --type="https://schema.org/BlogPosting"
+# Process multiple files with gs1.org context
+mdxai generate ./products/**/*.mdx --type="https://gs1.org/voc/Product"
 
-# Set concurrency limit (default: 2)
+# Generate TypeScript documentation with mdx.org.ai
 mdxai generate ./docs --type="https://mdx.org.ai/TypeScript" --concurrency=4
+
+# Process blog posts with real-time streaming
+mdxai generate ./blog --type="https://schema.org/BlogPosting" --stream
 ```
 
-The CLI provides real-time feedback:
+The CLI provides real-time feedback and zero-config operation:
+- Zero configuration needed - just specify the type and start generating
+- Automatically detects and processes MDX files recursively
+- Infers appropriate layouts and components based on schema type
+- Handles YAML-LD frontmatter conversion automatically
 - Streams AI-generated content to terminal as it's being generated
-- Shows file processing progress
-- Indicates concurrent file operations
-- Writes generated content to .generated.mdx files
+- Shows file processing progress with concurrent operations
+- Creates .generated.mdx files alongside originals
 
 ### CLI Options
 
@@ -110,3 +116,10 @@ This package uses:
 - CLI features use fs/promises and are Node.js only
 - Main package exports are compatible with browser and edge runtimes
 - Component generation works in all environments
+
+## Known Issues
+
+- The mdxld package (v0.1.0) currently has a missing dist/parser module that affects test execution
+  - Error: Cannot find module '/home/runner/work/mdxai/mdxai/node_modules/.pnpm/mdxld@0.1.0/node_modules/mdxld/dist/parser'
+  - Impact: Prevents test suite execution in CI environment
+  - Status: This issue will be addressed in a future update of the mdxld package

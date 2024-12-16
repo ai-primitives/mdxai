@@ -1,5 +1,13 @@
 # Project Status and Tasks
 
+## Blockers
+- [ ] mdxld Package Issue
+  - Error: Cannot find module 'mdxld/dist/parser'
+  - Impact: Preventing test execution in CI
+  - Details: The mdxld@0.1.0 package is missing its dist/parser module
+  - Location: Error occurs in test imports from mdxld package
+  - Status: Awaiting fix in mdxld package
+
 ## Implementation
 
 - [ ] Core functionality
