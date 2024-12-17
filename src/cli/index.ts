@@ -12,6 +12,8 @@ interface CliOptions {
   concurrency?: number
   help?: boolean
   version?: boolean
+  count?: number
+  topic?: string
 }
 
 export function parseArgs(args: string[]): CliOptions {
@@ -43,9 +45,31 @@ export function parseArgs(args: string[]): CliOptions {
         }
         break
       case 'generate':
-        options.input = []
-        while (i + 1 < args.length && !args[i + 1].startsWith('-')) {
-          options.input.push(args[++i])
+        // Parse "generate N content about X" pattern
+        if (i + 1 < args.length && !isNaN(parseInt(args[i + 1], 10))) {
+          options.count = parseInt(args[i + 1], 10)
+          i++
+
+          // Skip content type words (e.g., "blog", "posts")
+          while (i + 1 < args.length && !args[i + 1].startsWith('-') && args[i + 1] !== 'about') {
+            i++
+          }
+
+          // Parse topic after "about"
+          if (i + 2 < args.length && args[i + 1] === 'about') {
+            i++
+            const topicWords = []
+            while (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+              topicWords.push(args[++i])
+            }
+            options.topic = topicWords.join(' ')
+          }
+        } else {
+          // Original file/directory handling
+          options.input = []
+          while (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+            options.input.push(args[++i])
+          }
         }
         break
     }
@@ -58,13 +82,16 @@ export function showHelp(): void {
   console.log(`
 mdxai - Zero-config CLI to generate and update MDX with AI
 
-Usage: mdxai generate <paths...> --type <schema> [options]
+Usage:
+  mdxai generate <paths...> --type <schema> [options]
+  mdxai generate <count> <content-type> about <topic> --type <schema> [options]
 
 Commands:
-  generate <paths...>  Generate MDX for specified files/directories
+  generate <paths...>                    Generate MDX for specified files/directories
+  generate <count> <type> about <topic>  Generate multiple pieces of content about a topic
 
 Options:
-  --type <schema>     Schema type (e.g., https://schema.org/Article)
+  --type <schema>     Schema type (e.g., https://schema.org/Article, https://gs1.org/voc/Product, https://mdx.org.ai/TypeScript)
   --concurrency <n>   Number of concurrent generations (default: 2)
   -v, --version      Show version number
   -h, --help         Show help
@@ -73,6 +100,8 @@ Examples:
   mdxai generate ./content --type="https://schema.org/Article"
   mdxai generate ./blog/**/*.mdx --type="https://schema.org/BlogPosting"
   mdxai generate ./docs --type="https://mdx.org.ai/TypeScript" --concurrency=4
+  mdxai generate 50 blog posts about API development --type="https://schema.org/BlogPosting"
+  mdxai generate 10 products about electric vehicles --type="https://gs1.org/voc/Product"
 `)
 }
 
@@ -112,23 +141,47 @@ export async function cli(args: string[] = process.argv.slice(2)): Promise<void>
     showVersion()
   } else if (options.help) {
     showHelp()
-  } else if (options.input && options.type) {
-    const queue = new PQueue({ concurrency: options.concurrency || 2 })
+  } else if (options.type) {
+    if (options.count && options.topic) {
+      // Recursive generation
+      try {
+        const stream = await generateMDX({
+          type: options.type,
+          count: options.count,
+          topic: options.topic,
+        })
 
-    for (const pattern of options.input) {
-      const files = await glob(pattern)
-      for (const filepath of files) {
-        const fullPath = resolve(process.cwd(), filepath)
-        queue.add(() => processFile(fullPath, options.type!))
+        stream.on('data', (chunk) => process.stdout.write(chunk))
+
+        await new Promise((resolve, reject) => {
+          stream.on('end', resolve)
+          stream.on('error', reject)
+        })
+
+        console.log('\nAll content generated successfully!')
+      } catch (error) {
+        console.error('\nError during generation:', error)
+        process.exit(1)
       }
-    }
+    } else if (options.input) {
+      // Original file processing logic
+      const queue = new PQueue({ concurrency: options.concurrency || 2 })
 
-    try {
-      await queue.onIdle()
-      console.log('\nAll files processed successfully!')
-    } catch (error) {
-      console.error('\nError during processing:', error)
-      process.exit(1)
+      for (const pattern of options.input) {
+        const files = await glob(pattern)
+        for (const filepath of files) {
+          const fullPath = resolve(process.cwd(), filepath)
+          queue.add(() => processFile(fullPath, options.type!))
+        }
+      }
+
+      try {
+        await queue.onIdle()
+        console.log('\nAll files processed successfully!')
+      } catch (error) {
+        console.error('\nError during processing:', error)
+        process.exit(1)
+      }
     }
   } else {
     showHelp()
