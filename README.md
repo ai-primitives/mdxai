@@ -19,11 +19,13 @@ Zero-config CLI to recursively generate and update MDX structured data, unstruct
 ## Installation
 
 Install globally:
+
 ```bash
 npm install -g mdxai
 ```
 
 Or use with npx:
+
 ```bash
 npx mdxai generate ./content --type="https://schema.org/Article"
 ```
@@ -49,6 +51,7 @@ mdxai generate ./blog --type="https://schema.org/BlogPosting" --stream
 ```
 
 The CLI provides real-time feedback and zero-config operation:
+
 - Zero configuration needed - just specify the type and start generating
 - Automatically detects and processes MDX files recursively
 - Infers appropriate layouts and components based on schema type
@@ -84,7 +87,7 @@ const stream = await generateMDX({
 })
 
 // Handle streaming output
-stream.on('data', chunk => {
+stream.on('data', (chunk) => {
   console.log(chunk) // Process chunks as they arrive
 })
 
@@ -109,6 +112,7 @@ description: An example article
 ## Dependencies
 
 This package uses:
+
 - mdxld for MDX Linked Data processing
 - ai-functions for AI-powered content generation
 - fs/promises (Node.js only) for CLI operations

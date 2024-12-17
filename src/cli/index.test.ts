@@ -55,18 +55,11 @@ describe('CLI', () => {
   })
 
   it('should parse multiple options together', () => {
-    const options = parseArgs([
-      'generate',
-      './content',
-      '--type',
-      'https://schema.org/Article',
-      '--concurrency',
-      '4'
-    ])
+    const options = parseArgs(['generate', './content', '--type', 'https://schema.org/Article', '--concurrency', '4'])
     expect(options).toEqual({
       input: ['./content'],
       type: 'https://schema.org/Article',
-      concurrency: 4
+      concurrency: 4,
     })
   })
 
