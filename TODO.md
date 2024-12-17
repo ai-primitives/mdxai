@@ -1,6 +1,7 @@
 # Project Status and Tasks
 
 ## Blockers
+
 - [ ] Missing CI Configuration
   - Error: No GitHub Actions workflows found in repository
   - Impact: Preventing PR checks and automated testing
