@@ -97,6 +97,35 @@ await new Promise((resolve, reject) => {
 })
 ```
 
+### Cloudflare Workers AI Support
+
+For Cloudflare Workers environments, mdxai supports Cloudflare AI models out of the box:
+
+```typescript
+const stream = await generateMDX({
+  type: '@cf/meta/llama-2-7b-chat-int8',
+  content: '# My Article',
+  env: { AI: env.AI }, // Pass Cloudflare Workers AI binding
+})
+```
+
+To use Cloudflare Workers AI:
+
+1. Add the AI binding to your `wrangler.toml`:
+
+```toml
+[[ai]]
+binding = 'AI'
+```
+
+2. Use any supported Cloudflare AI model by prefixing it with `@cf`:
+
+- `@cf/meta/llama-2-7b-chat-int8`
+- `@cf/meta/llama-3.1-8b-instruct`
+- `@cf/mistral/mistral-7b-instruct-v0.2`
+
+The model will be automatically routed to Cloudflare's AI service when the model name starts with `@cf`.
+
 ### YAML-LD Frontmatter
 
 MDX files can include YAML-LD frontmatter:
@@ -115,6 +144,7 @@ This package uses:
 
 - mdxld for MDX Linked Data processing
 - ai-functions for AI-powered content generation
+- workers-ai-provider for Cloudflare Workers AI support
 - fs/promises (Node.js only) for CLI operations
 
 ## Runtime Compatibility
