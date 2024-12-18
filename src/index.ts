@@ -2,6 +2,17 @@ import { Readable } from 'node:stream'
 import { AI } from 'ai-functions'
 import { parse, stringify } from 'mdxld'
 
+interface WorkersEnv {
+  AI: {
+    run(model: string, options: { prompt: string }): Promise<{ text: string }>
+  }
+}
+
+type AIProvider = {
+  gpt: (strings: string[]) => Promise<string | null>
+  list: (strings: string[]) => AsyncGenerator<string>
+}
+
 export interface GenerateOptions {
   type: string
   filepath?: string
@@ -9,22 +20,54 @@ export interface GenerateOptions {
   components?: string[]
   count?: number
   topic?: string
+  env?: WorkersEnv
 }
 
 export async function generateMDX(options: GenerateOptions): Promise<Readable> {
-  const { type, filepath, content: inputContent, components = [], count, topic } = options
+  const { type, filepath, content: inputContent, components = [], count, topic, env } = options
 
   const stream = new Readable({
     read() {},
   })
 
   try {
-    const ai = AI({
-      apiKey: process.env.OPENAI_API_KEY,
-    })
+    let ai: AIProvider
+    if (env?.AI && type.startsWith('@cf')) {
+      const modelName = type.replace('@cf/', '')
+      ai = {
+        gpt: async (strings) => {
+          const response = await env.AI.run(modelName, {
+            prompt: strings.join('\n'),
+          })
+          return response.text || null
+        },
+        list: async function* (strings) {
+          const response = await env.AI.run(modelName, {
+            prompt: strings.join('\n'),
+          })
+          if (response.text) {
+            yield response.text
+          }
+        },
+      }
+    } else {
+      const openai = AI({
+        apiKey: process.env.OPENAI_API_KEY,
+      })
+      ai = {
+        gpt: async (strings) => {
+          const result = await openai.gpt(strings)
+          return result || null
+        },
+        list: async function* (strings) {
+          for await (const item of openai.list(strings)) {
+            if (item) yield item
+          }
+        },
+      }
+    }
 
     if (count && topic) {
-      // Recursive generation
       const listItems = ai.list([`Generate ${count} titles for content about ${topic} following the schema:`, type, 'Output only the titles, one per line.'])
 
       for await (const title of listItems) {
@@ -46,11 +89,11 @@ export async function generateMDX(options: GenerateOptions): Promise<Readable> {
       const rawContent = filepath ? await parse(filepath) : inputContent
       if (!rawContent) throw new Error('No content provided')
 
-      const content = typeof rawContent === 'object' ? stringify(rawContent) : rawContent
+      const processedContent = typeof rawContent === 'object' ? stringify(rawContent) : rawContent
 
       const generator = ai.list([
         'Given the content:',
-        content,
+        processedContent,
         'Generate MDX content following the schema:',
         type,
         'Using these components:',
