@@ -6,6 +6,8 @@ interface WorkersEnv {
   AI: {
     run(model: string, options: { prompt: string }): Promise<{ text: string }>
   }
+  AI_MODEL?: string
+  AI_GATEWAY?: string
 }
 
 type AIProvider = {
@@ -49,6 +51,55 @@ export async function generateMDX(options: GenerateOptions): Promise<Readable> {
             yield response.text
           }
         },
+      }
+    } else if (env?.AI_GATEWAY || process.env.AI_GATEWAY) {
+      const { createOpenAICompatible } = await import('@ai-sdk/openai-compatible')
+      const model = createOpenAICompatible({
+        name: 'cloudflare',
+        headers: {
+          Authorization: `Bearer ${process.env.CF_WORKERS_AI_TOKEN}`,
+        },
+        baseURL: env?.AI_GATEWAY || process.env.AI_GATEWAY,
+      })
+      ai = {
+        gpt: async (strings) => {
+          const response = await model.chatModel(env?.AI_MODEL || process.env.AI_MODEL || 'gpt-3.5-turbo').doGenerate({
+            inputFormat: 'messages',
+            mode: {
+              type: 'regular'
+            },
+            prompt: [{
+              role: 'user',
+              content: [{
+                type: 'text',
+                text: strings.join('\n')
+              }]
+            }],
+            temperature: 0.7,
+            maxTokens: 2048
+          })
+          return response.text || null
+        },
+        list: async function* (strings) {
+          const response = await model.chatModel(env?.AI_MODEL || process.env.AI_MODEL || 'gpt-3.5-turbo').doGenerate({
+            inputFormat: 'messages',
+            mode: {
+              type: 'regular'
+            },
+            prompt: [{
+              role: 'user',
+              content: [{
+                type: 'text',
+                text: strings.join('\n')
+              }]
+            }],
+            temperature: 0.7,
+            maxTokens: 2048
+          })
+          if (response.text) {
+            yield response.text
+          }
+        }
       }
     } else {
       const openai = AI({

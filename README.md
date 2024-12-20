@@ -97,7 +97,6 @@ await new Promise((resolve, reject) => {
 })
 ```
 
-
 ### YAML-LD Frontmatter
 
 MDX files can include YAML-LD frontmatter:

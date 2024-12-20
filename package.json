@@ -43,6 +43,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.10",
+    "@ai-sdk/openai-compatible": "^0.0.9",
+    "@ai-sdk/provider": "^1.0.2",
     "ai": "^4.0.20",
     "ai-functions": "^0.2.19",
     "mdxld": "^0.1.1",
