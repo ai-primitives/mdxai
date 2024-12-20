@@ -42,12 +42,11 @@
     "url": "https://github.com/ai-primitives/mdxai/issues"
   },
   "dependencies": {
-    "@ai-sdk/provider": "0.0.14",
-    "@cloudflare/workers-types": "^4.20241218.0",
+    "@ai-sdk/openai": "^1.0.10",
+    "ai": "^4.0.20",
     "ai-functions": "^0.2.19",
     "mdxld": "^0.1.1",
-    "p-queue": "^7.4.1",
-    "workers-ai-provider": "^0.0.10"
+    "p-queue": "^7.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
