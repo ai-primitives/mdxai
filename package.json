@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
+  "browser": "dist/browser.js",
   "types": "dist/index.d.ts",
   "bin": {
     "mdxai": "bin/cli.js"
@@ -15,7 +16,9 @@
     "bin"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "pnpm run build:node && pnpm run build:browser",
+    "build:node": "tsc",
+    "build:browser": "tsc -p tsconfig.browser.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src",

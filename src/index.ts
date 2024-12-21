@@ -66,17 +66,21 @@ export async function generateMDX(options: GenerateOptions): Promise<Readable> {
           const response = await model.chatModel(env?.AI_MODEL || process.env.AI_MODEL || 'gpt-3.5-turbo').doGenerate({
             inputFormat: 'messages',
             mode: {
-              type: 'regular'
+              type: 'regular',
             },
-            prompt: [{
-              role: 'user',
-              content: [{
-                type: 'text',
-                text: strings.join('\n')
-              }]
-            }],
+            prompt: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: strings.join('\n'),
+                  },
+                ],
+              },
+            ],
             temperature: 0.7,
-            maxTokens: 2048
+            maxTokens: 2048,
           })
           return response.text || null
         },
@@ -84,22 +88,26 @@ export async function generateMDX(options: GenerateOptions): Promise<Readable> {
           const response = await model.chatModel(env?.AI_MODEL || process.env.AI_MODEL || 'gpt-3.5-turbo').doGenerate({
             inputFormat: 'messages',
             mode: {
-              type: 'regular'
+              type: 'regular',
             },
-            prompt: [{
-              role: 'user',
-              content: [{
-                type: 'text',
-                text: strings.join('\n')
-              }]
-            }],
+            prompt: [
+              {
+                role: 'user',
+                content: [
+                  {
+                    type: 'text',
+                    text: strings.join('\n'),
+                  },
+                ],
+              },
+            ],
             temperature: 0.7,
-            maxTokens: 2048
+            maxTokens: 2048,
           })
           if (response.text) {
             yield response.text
           }
-        }
+        },
       }
     } else {
       const openai = AI({
