@@ -81,25 +81,21 @@ export async function generateMDX(options: GenerateOptions): Promise<ReadableStr
               return response.text || null
             },
             list: async function* (strings) {
-              const response = await model.chatModel(env?.AI_MODEL || globalThis?.process?.env?.AI_MODEL || 'gpt-3.5-turbo').doGenerate({
+              const response = await model.chatModel('gpt-3.5-turbo').doGenerate({
                 inputFormat: 'messages',
                 mode: {
                   type: 'regular',
                 },
                 prompt: [
                   {
-                    role: 'user',
-                    content: [
-                      {
-                        type: 'text',
-                        text: strings.join('\n'),
-                      },
-                    ],
+                    role: 'system',
+                    content: strings.join('\n'),
                   },
                 ],
                 temperature: 0.7,
                 maxTokens: 2048,
               })
+
               if (response.text) {
                 yield response.text
               }

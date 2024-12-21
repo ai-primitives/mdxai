@@ -14,7 +14,11 @@ export default [
       },
       globals: {
         console: 'readonly',
-        process: 'readonly'
+        process: 'readonly',
+        ReadableStream: 'readonly',
+        TextDecoder: 'readonly',
+        TextEncoder: 'readonly',
+        fetch: 'readonly'
       }
     },
     plugins: {
