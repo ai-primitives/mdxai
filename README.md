@@ -9,12 +9,12 @@ Zero-config CLI to recursively generate and update MDX structured data, unstruct
 
 - 🚀 Zero-config MDX generation and updates
 - 📝 Support for schema.org, gs1.org, and mdx.org.ai contexts
-- 🔄 Recursive directory processing with concurrent execution
-- 📊 Real-time progress streaming to terminal
-- 🌐 Browser and edge runtime compatible
-- ⚡️ CLI powered by fs/promises for Node.js environments
-- 💻 Import/export JavaScript/TypeScript
-- 🎨 JSX/React UI component support
+- 🔄 Recursive directory processing with concurrent execution (In Progress)
+- 📊 Real-time progress streaming to terminal (In Progress)
+- 🌐 Browser and edge runtime compatible (In Progress)
+- ⚡️ CLI powered by fs/promises for Node.js environments (In Progress)
+- 💻 Import/export JavaScript/TypeScript (In Progress)
+- 🎨 JSX/React UI component support (In Progress)
 
 ## Installation
 
@@ -130,3 +130,7 @@ This package uses:
   - Impact: Prevents test suite execution in CI environment
   - Status: This issue will be addressed in a future update of the mdxld package
   - Note: Production functionality using the main exports remains unaffected
+- Missing CI Configuration
+  - Impact: Preventing PR checks and automated testing
+  - Status: CI setup required for automated testing
+  - Workaround: Tests can be run locally using `pnpm test`
