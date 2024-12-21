@@ -7,16 +7,17 @@
   - Impact: Preventing PR checks and automated testing
   - Details: Repository lacks CI configuration for running tests and checks
   - Location: Missing .github/workflows directory and workflow files
-  - Status: Requires CI setup for automated testing
+  - Status: High priority - Required for automated testing and deployment
+  - Required: GitHub Actions workflow for build, test, and release
   - Workaround: Tests can be run locally using `pnpm test`
 
 ## Implementation
 
 - [x] Core functionality
   - [x] Basic MDXLD integration (parse/stringify)
-  - [x] Full MDXLD integration
+  - [x] Full MDXLD integration (v0.1.3)
   - [x] AI Functions integration
-  - [ ] Browser/Edge runtime support
+  - [x] Browser/Edge runtime support
   - [ ] JavaScript/TypeScript import/export
   - [ ] JSX/React UI component support
 - [ ] CLI Implementation
