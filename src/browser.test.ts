@@ -1,8 +1,8 @@
 /// <reference lib="dom" />
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { generateMDX } from './browser'
-import { ReadableStream } from 'stream/web'
-import type { OpenAICompatibleProvider } from '@ai-sdk/openai-compatible'
+
+// PLACEHOLDER: rest of the test file implementation
 
 // Mock AI provider
 vi.mock('ai-functions', () => ({
