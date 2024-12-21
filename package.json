@@ -47,7 +47,7 @@
     "@ai-sdk/provider": "^1.0.2",
     "ai": "^4.0.20",
     "ai-functions": "^0.2.19",
-    "mdxld": "^0.1.1",
+    "mdxld": "^0.1.3",
     "p-queue": "^7.4.1"
   },
   "devDependencies": {
