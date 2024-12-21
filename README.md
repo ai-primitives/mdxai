@@ -30,7 +30,7 @@ Or use with npx:
 npx mdxai generate ./content --type="https://schema.org/Article"
 ```
 
-Note: This package depends on mdxld@0.1.0. There is a known issue with the parser module in this version that affects test execution. Production functionality using the main exports remains unaffected.
+Note: This package depends on mdxld@0.1.3. While previous versions had issues with the parser module affecting test execution, the current version has resolved many of these issues. Please refer to the Known Issues section for any remaining concerns.
 
 ## CLI Usage
 
@@ -125,12 +125,10 @@ This package uses:
 
 ## Known Issues
 
-- The mdxld package (v0.1.0) currently has a missing dist/parser module that affects test execution
-  - Error: Cannot find module '/home/runner/work/mdxai/mdxai/node_modules/.pnpm/mdxld@0.1.0/node_modules/mdxld/dist/parser'
-  - Impact: Prevents test suite execution in CI environment
-  - Status: This issue will be addressed in a future update of the mdxld package
-  - Note: Production functionality using the main exports remains unaffected
-- Missing CI Configuration
-  - Impact: Preventing PR checks and automated testing
-  - Status: CI setup required for automated testing
-  - Workaround: Tests can be run locally using `pnpm test`
+- CI/CD Pipeline
+  - Issue: Missing GitHub Actions workflows for automated testing
+  - Impact: Manual verification required for contributions
+  - Status: CI configuration is planned for implementation
+  - Note: Local testing can be performed using `pnpm test`
+
+For the latest updates and issue tracking, please visit our GitHub repository.
