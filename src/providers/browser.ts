@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { AI } from 'ai-functions'
 
 interface AIProviderOptions {
@@ -20,7 +21,7 @@ export function createAIProvider(options: AIProviderOptions) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${globalThis?.process?.env?.CF_WORKERS_AI_TOKEN || ''}`,
+            Authorization: `Bearer ${globalThis?.process?.env?.CF_WORKERS_AI_TOKEN || ''}`,
           },
           body: JSON.stringify({
             model,
@@ -39,7 +40,7 @@ export function createAIProvider(options: AIProviderOptions) {
           throw new Error(`AI gateway error: ${response.statusText}`)
         }
 
-        const data = await response.json() as AIResponse
+        const data = (await response.json()) as AIResponse
         return data.text
       },
       list: async function* (strings: string[]): AsyncGenerator<string> {
@@ -47,7 +48,7 @@ export function createAIProvider(options: AIProviderOptions) {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${globalThis?.process?.env?.CF_WORKERS_AI_TOKEN || ''}`,
+            Authorization: `Bearer ${globalThis?.process?.env?.CF_WORKERS_AI_TOKEN || ''}`,
           },
           body: JSON.stringify({
             model,
@@ -66,7 +67,7 @@ export function createAIProvider(options: AIProviderOptions) {
           throw new Error(`AI gateway error: ${response.statusText}`)
         }
 
-        const data = await response.json() as AIResponse
+        const data = (await response.json()) as AIResponse
         if (data.text) {
           yield data.text
         }

@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { describe, it, expect } from 'vitest'
 import { generateMDX } from './browser'
 

@@ -1,5 +1,5 @@
 import { AI } from 'ai-functions'
-import { parse, stringify } from 'mdxld'
+import { stringify } from 'mdxld'
 
 interface WorkersEnv {
   AI: {
@@ -123,7 +123,11 @@ export async function generateMDX(options: GenerateOptions): Promise<ReadableStr
         }
 
         if (count && topic) {
-          const listItems = ai.list([`Generate ${count} titles for content about ${topic} following the schema:`, type, 'Output only the titles, one per line.'])
+          const listItems = ai.list([
+            `Generate ${count} titles for content about ${topic} following the schema:`,
+            type,
+            'Output only the titles, one per line.',
+          ])
 
           for await (const title of listItems) {
             if (!title) continue
@@ -171,7 +175,7 @@ export async function generateMDX(options: GenerateOptions): Promise<ReadableStr
       } catch (error) {
         controller.error(error)
       }
-    }
+    },
   })
 
   return stream
