@@ -35,5 +35,5 @@
     ],
     "@semantic-release/github"
   ],
-  "tagFormat": "0.1.x"
+  "tagFormat": "v${version}"
 }
