@@ -21,7 +21,7 @@
   - [x] Basic MDXLD integration (parse/stringify)
   - [x] Full MDXLD integration
   - [x] AI Functions integration
-  - [ ] Browser/Edge runtime support
+  - [x] Browser/Edge runtime support
   - [ ] JavaScript/TypeScript import/export
   - [ ] JSX/React UI component support
 - [ ] CLI Implementation
