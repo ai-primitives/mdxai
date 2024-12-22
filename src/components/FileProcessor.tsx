@@ -1,23 +1,39 @@
-import React, { useState } from 'react'
+import React, { useState, type FC } from 'react'
 import { Box, Text } from 'ink'
-import Spinner from 'ink-spinner'
-import { Task } from 'listr'
+// Spinner component commented out for core functionality
+// import Spinner from 'ink-spinner'
 
 interface FileProcessorProps {
   files: string[]
   onComplete: () => void
 }
 
-const FileProcessor: React.FC<FileProcessorProps> = ({ files, onComplete }) => {
+// Simplified version without Spinner for core functionality
+const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   const [currentFile, setCurrentFile] = useState(0)
 
+  React.useEffect(() => {
+    if (currentFile >= files.length) {
+      onComplete()
+      return
+    }
+
+    const timer = setTimeout(() => {
+      setCurrentFile((prev) => prev + 1)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [currentFile, files.length, onComplete])
+
+  if (currentFile >= files.length) {
+    return null
+  }
+
+  // Simplified UI without Spinner
   return (
     <Box flexDirection='column'>
       <Text>
-        <Spinner /> Processing {files[currentFile]}
-      </Text>
-      <Text>
-        Progress: {currentFile + 1}/{files.length}
+        Processing file {currentFile + 1} of {files.length}
       </Text>
     </Box>
   )

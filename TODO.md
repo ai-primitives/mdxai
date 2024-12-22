@@ -4,6 +4,11 @@
 
 - [x] Core functionality
   - [x] MDXLD integration (parse/stringify) - Implemented in src/index.ts
+  - [x] Test Infrastructure
+    - [x] Parallel execution with 20 threads
+    - [x] Token limit of 100 for faster tests
+    - [x] Resilient assertions for AI content
+    - [x] Improved error handling and logging
 - [x] CLI Implementation
   - [x] fs/promises based file operations - Implemented using fs/promises
   - [x] Recursive directory processing - Implemented with glob pattern support
