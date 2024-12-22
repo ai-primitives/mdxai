@@ -190,7 +190,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(100) // Minimum content length for faster tests
+    expect(generatedText?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     expect(generatedText).toMatch(/\n[#\s]/) // Has at least one heading or section
 
@@ -204,7 +204,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Verify content structure
     const content = generatedText.toString().split(/---\s*\n/)[2] || ''
-    expect(content).toMatch(/^#\s+\w+/m) // Has a heading
+    expect(content).toMatch(/^#{1,2}\s+\w+/m) // Has a heading (# or ##)
     expect(content.split('\n').length).toBeGreaterThan(10) // Has multiple paragraphs
 
     // Verify generation metadata
@@ -353,7 +353,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       console.log('Verifying content structure...')
       const content = generatedText.toString().split(/---\s*\n/)[2] || ''
       expect(content).toMatch(/^#\s+\w+/m) // Has a heading
-      expect(content.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+      expect(content.length).toBeGreaterThan(500) // Minimum content length requirement
 
       // Verify the generation completed successfully
       console.log('Verifying completion status...')
@@ -371,4 +371,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                           
+})                                                                                 

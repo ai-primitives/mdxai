@@ -74,7 +74,7 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(100) // Minimum content length for faster tests
+    expect(text?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
     expect(finishReason).toBe('length') // Expect length finish reason due to token limit
     expect(usage).toHaveProperty('totalTokens')
     // Verify content structure with more flexible assertions
@@ -103,7 +103,7 @@ describe('generateMDX', () => {
     // Verify streamed content matches structure
     expect(streamedContent).toMatch(/^---\n/) // Should start with frontmatter
     expect(streamedContent).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Should have schema type
-    expect(streamedContent.length).toBeGreaterThan(100) // Minimum content length for faster tests
+    expect(streamedContent.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
   })
 
   it('should stream to file and stdout', async () => {
@@ -261,7 +261,7 @@ describe('generateMDX', () => {
 
     // More flexible component verification
     expect(text).toBeTruthy()
-    expect(text.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+    expect(text.length).toBeGreaterThan(500) // Minimum content length requirement
 
     // Verify frontmatter structure
     expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
