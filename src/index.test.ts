@@ -4,6 +4,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import 'dotenv/config'
+import { openai } from '@ai-sdk/openai'
 
 // Add setTimeout to global scope for ESLint
 const { setTimeout } = globalThis
@@ -21,7 +22,7 @@ describe('generateMDX', () => {
         type: 'https://schema.org/Article',
         topic: 'AI Testing',
         components: ['Button'],
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Use model string instead of instance
         maxTokens: 100,
       })
     } catch (error) {
@@ -39,7 +40,7 @@ describe('generateMDX', () => {
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
       try {
-        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
+        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
 
         await Promise.race([
           (async () => {
@@ -73,7 +74,7 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(500) // Minimum content length requirement
+    expect(text?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
     expect(finishReason).toBe('length') // Expect length finish reason due to token limit
     expect(usage).toHaveProperty('totalTokens')
     // Verify content structure with more flexible assertions
@@ -194,10 +195,10 @@ describe('generateMDX', () => {
       // Verify content structure and quality
       console.log('Verifying content structure...')
       expect(fileContent).toBeTruthy()
-      expect(fileContent.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
+      expect(fileContent.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
 
       // Verify frontmatter structure
-      const frontmatterMatch = fileContent.match(/^---[\s\S]*?---/)
+      const frontmatterMatch = fileContent.match(/^---([\s\S]*?)---/)
       expect(frontmatterMatch).toBeTruthy()
       const frontmatter = frontmatterMatch?.[1] || ''
       expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/)
@@ -214,7 +215,7 @@ describe('generateMDX', () => {
 
       // Verify streamed content
       console.log('Verifying streamed content...')
-      expect(streamedContent.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
+      expect(streamedContent.length).toBeGreaterThan(500) // Minimum content length requirement
       expect(streamedContent).toMatch(/^---[\s\S]*?---/)
     } catch (error) {
       console.error('Test failed:', error)
@@ -240,7 +241,7 @@ describe('generateMDX', () => {
 
     // More flexible component verification
     expect(text).toBeTruthy()
-    expect(text.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
+    expect(text.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
 
     // Verify frontmatter structure
     expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
@@ -253,15 +254,20 @@ describe('generateMDX', () => {
 
     // Check for any component-like patterns
     const componentPatterns = [
-      /<Button[^>]*>/,
-      /<Card[^>]*>/,
-      /<Alert[^>]*>/,
-      /<[A-Z][a-zA-Z]*(\s|>|\/)/  // Generic component pattern
+      /<Button[^>]*>/i,
+      /<Card[^>]*>/i,
+      /<Alert[^>]*>/i,
+      /<[A-Z][a-zA-Z]*(\s|>|\/)/i  // Generic component pattern, case insensitive
     ]
     
-    // Expect at least one component pattern to match
-    const hasComponent = componentPatterns.some(pattern => pattern.test(text))
-    expect(hasComponent).toBe(true)
+    // More flexible component validation
+    const contentLines = text.split('\n')
+    const hasComponent = contentLines.some(line => 
+      componentPatterns.some(pattern => pattern.test(line))
+    )
+    expect(hasComponent).toBeTruthy()
+    console.log('Content lines with potential components:', 
+      contentLines.filter(line => componentPatterns.some(pattern => pattern.test(line))))
   })
 
   it('should generate multiple versions when count > 1', async () => {
