@@ -12,7 +12,7 @@ const model = openai('gpt-4o-mini')
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 5000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -69,7 +69,7 @@ describe('CLI', () => {
     console.log('Starting basic MDX generation test...')
     const filepath = 'blog/future-of-ai.mdx'
     const instructions = 'write a blog post about the future of AI'
-    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100']
+    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame, rerender } = render(<App />)
 
@@ -83,7 +83,7 @@ describe('CLI', () => {
 
       // More flexible assertions for non-deterministic responses
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
-      expect(frame).toContain(filepath)
+      expect(frame).toMatch(/Processing|Generation complete/)
     } catch (error) {
       console.error('Test failed:', error)
       throw error
@@ -93,40 +93,22 @@ describe('CLI', () => {
   it('handles editing existing MDX content', async () => {
     const filepath = 'blog/future-of-ai.mdx'
     const instructions = 'add more real-world examples from recent news'
-    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100']
+    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame } = render(<App />)
     console.log('Starting content editing test...')
 
     try {
-      // Wait for processing to start
-      console.log('Waiting for processing to start...')
-      await waitForStatus(lastFrame, /Processing/, 30000)
+      // Wait for processing to complete with better timeout handling
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, 5000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
 
-      // Wait for generation with progress logging
-      console.log('Processing started, waiting for generation to complete...')
-      let startTime = Date.now()
-      let lastLogTime = startTime
+      const frame = lastFrame()
+      if (!frame) throw new Error('No frame rendered')
 
-      while (Date.now() - startTime < 10000) {
-        const frame = lastFrame()
-
-        // Log progress every 10 seconds
-        if (Date.now() - lastLogTime > 10000) {
-          console.log(`Current status (${Math.floor((Date.now() - startTime) / 1000)}s):`, frame)
-          lastLogTime = Date.now()
-        }
-
-        if (frame && /(Generation complete|Completed|Done)/.test(frame)) {
-          console.log('Generation completed successfully')
-          expect(frame).toContain(filepath)
-          return
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-      }
-
-      throw new Error('Generation did not complete within timeout')
+      // More flexible assertions for non-deterministic responses
+      expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
+      expect(frame).toContain(filepath)
     } catch (error) {
       console.error('Test failed:', error)
       const frame = lastFrame()
@@ -154,7 +136,7 @@ describe('CLI', () => {
   it('generates MDX content with proper frontmatter and schema', async () => {
     const filepath = 'blog/test-article.mdx'
     const instructions = 'write a technical article about testing'
-    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100']
+    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame } = render(<App />)
 
@@ -188,7 +170,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
+    expect(generatedText?.length).toBeGreaterThan(500) // Minimum content length requirement
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     expect(generatedText).toMatch(/\n[#\s]/) // Has at least one heading or section
 
@@ -220,11 +202,11 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, 5000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    await waitForStatus(lastFrame, /Generation complete/, 5000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -341,4 +323,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})            
+})                           

@@ -21,6 +21,7 @@ describe('generateMDX', () => {
         type: 'https://schema.org/Article',
         topic: 'AI Testing',
         components: ['Button'],
+        model: 'gpt-4o-mini',
         maxTokens: 100,
       })
     } catch (error) {
@@ -38,7 +39,7 @@ describe('generateMDX', () => {
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
       try {
-        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
+        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
 
         await Promise.race([
           (async () => {
@@ -72,7 +73,7 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
+    expect(text?.length).toBeGreaterThan(500) // Minimum content length requirement
     expect(finishReason).toBe('length') // Expect length finish reason due to token limit
     expect(usage).toHaveProperty('totalTokens')
     // Verify content structure with more flexible assertions
@@ -101,7 +102,7 @@ describe('generateMDX', () => {
     // Verify streamed content matches structure
     expect(streamedContent).toMatch(/^---\n/) // Should start with frontmatter
     expect(streamedContent).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Should have schema type
-    expect(streamedContent.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+    expect(streamedContent.length).toBeGreaterThan(500) // Minimum content length requirement
   })
 
   it('should stream to file and stdout', async () => {
@@ -241,10 +242,26 @@ describe('generateMDX', () => {
     expect(text).toBeTruthy()
     expect(text.length).toBeGreaterThan(50) // Minimum content length for 100 token limit (approximately 50 chars)
 
-    // Check for component-like patterns rather than exact matches
-    const hasComponentPattern = text.match(/<[A-Z][a-zA-Z]*(\s|>|\/)/g)
-    expect(hasComponentPattern).toBeTruthy()
-    expect(hasComponentPattern?.length).toBeGreaterThan(0)
+    // Verify frontmatter structure
+    expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
+    const frontmatterMatch = text.toString().match(/^---([\s\S]*?)---/)
+    expect(frontmatterMatch).toBeTruthy()
+    const frontmatter = frontmatterMatch?.[1] || ''
+    expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Has schema type
+    expect(frontmatter).toMatch(/title:\s*.+/m) // Has title
+    expect(frontmatter).toMatch(/description:\s*.+/m) // Has description
+
+    // Check for any component-like patterns
+    const componentPatterns = [
+      /<Button[^>]*>/,
+      /<Card[^>]*>/,
+      /<Alert[^>]*>/,
+      /<[A-Z][a-zA-Z]*(\s|>|\/)/  // Generic component pattern
+    ]
+    
+    // Expect at least one component pattern to match
+    const hasComponent = componentPatterns.some(pattern => pattern.test(text))
+    expect(hasComponent).toBe(true)
   })
 
   it('should generate multiple versions when count > 1', async () => {

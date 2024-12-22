@@ -1,5 +1,7 @@
 import React, { useState, type FC } from 'react'
 import { Box, Text } from 'ink'
+// Spinner component commented out for core functionality
+// import Spinner from 'ink-spinner'
 
 interface FileProcessorProps {
   files: string[]
