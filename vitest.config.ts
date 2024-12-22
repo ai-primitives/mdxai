@@ -12,7 +12,8 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: false,
-        maxThreads: 20 // Use all available threads
+        maxThreads: 20, // Use all available threads
+        isolate: true // Ensure proper test isolation
       }
     },
     setupFiles: ['dotenv/config'],

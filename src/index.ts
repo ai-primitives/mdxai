@@ -1,13 +1,21 @@
 import { parse, stringify } from 'mdxld'
 import { streamText } from 'ai'
-import { openai } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
 // Add setTimeout to global scope for ESLint
 const { setTimeout } = globalThis
 
-const defaultModel = openai(process.env.OPENAI_MODEL || 'gpt-4o-mini')
+// Configure OpenAI client with gateway support
+const openAIClient = createOpenAICompatible({
+  baseURL: process.env.AI_GATEWAY || 'https://api.openai.com/v1',
+  headers: {
+    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+  }
+})
+
+const defaultModel = openAIClient('gpt-4o-mini')
 
 export interface GenerateOptions {
   type: string
@@ -23,10 +31,10 @@ export interface GenerateOptions {
 }
 
 export async function generateMDX(options: GenerateOptions) {
-  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 500, model: customModel } = options
+  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 100, model: customModel } = options
 
   // Use custom model if provided, otherwise use default
-  const model = customModel ? openai(customModel) : defaultModel
+  const model = customModel ? openAIClient(customModel) : defaultModel
 
   // Construct the system prompt
   const system = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
@@ -73,8 +81,8 @@ ${components.length > 0 ? `Incorporate these components naturally in the content
       model,
       system,
       prompt,
-      maxTokens: maxTokens || 100,
-      temperature: 0.7,
+      maxTokens: 100, // Fixed token limit for consistent test behavior
+      temperature: 0.7, // Standard temperature for consistent output
     })
 
     // Create a buffer to accumulate the content

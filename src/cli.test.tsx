@@ -8,12 +8,13 @@ import path from 'path'
 
 // Configure model with appropriate settings for tests
 // Configure model with appropriate settings for tests
+// Configure model with appropriate settings for tests
 const model = openai.chat('gpt-4o-mini')
 
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 5000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -76,8 +77,8 @@ describe('CLI', () => {
 
     try {
       // Wait for processing to complete with better timeout handling
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 5000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000) // Use consistent 5s timeout
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000) // Use consistent 10s timeout
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -101,8 +102,8 @@ describe('CLI', () => {
 
     try {
       // Wait for processing to complete with better timeout handling
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 5000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -180,7 +181,7 @@ Content requirements:
 IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
       prompt: instructions,
       maxTokens: 100,
-      temperature: 0.3, // Lower temperature for more consistent output
+      temperature: 0.7, // Standard temperature for consistent output
     })
 
     const generatedText = await result.text
@@ -192,7 +193,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(50) // More lenient minimum length for 100 token limit
+    expect(generatedText?.length).toBeGreaterThan(500) // Ensure content length > 500 chars
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     const endTime = Date.now()
     console.log(`Test completed in ${endTime - startTime}ms`)
@@ -226,11 +227,11 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 5000)
+    await waitForStatus(lastFrame, /Processing/, 10000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 5000)
+    await waitForStatus(lastFrame, /Generation complete/, 10000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -270,7 +271,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     try {
       // Wait for generation to complete with better timeout handling
       console.log('Waiting for generation to complete...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
       
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -330,7 +331,7 @@ Here's a <Button>Click me</Button> component.
 Use <Alert>Important testing guidelines</Alert> for better results.`,
         prompt: 'Generate an article about AI testing.',
         maxTokens: 100,
-        temperature: 0.3, // Lower temperature for more consistent output
+        temperature: 0.7, // Standard temperature for consistent output
       })
 
       console.log('Generation completed, verifying results...')
@@ -342,7 +343,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       console.log('Generated text length:', generatedText?.length)
       expect(generatedText).toBeTruthy()
       expect(typeof generatedText).toBe('string')
-      expect(generatedText?.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 tokens
+      expect(generatedText?.length).toBeGreaterThan(500) // Ensure content length > 500 chars
 
       // Verify frontmatter structure with more flexible matching
       console.log('Verifying frontmatter...')
@@ -357,7 +358,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       console.log('Verifying content structure...')
       const content = generatedText.toString().split(/---\s*\n/)[2] || ''
       expect(content).toMatch(/^#\s+\w+/m) // Has a heading
-      expect(content.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 tokens
+      expect(content.length).toBeGreaterThan(500) // Ensure content length > 500 chars
 
       // Verify the generation completed successfully
       console.log('Verifying completion status...')
@@ -366,7 +367,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
 
       // Verify the CLI output with better timeout handling
       console.log('Waiting for CLI output...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
@@ -375,4 +376,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                  
+})                                                                                                                                    

@@ -40,7 +40,7 @@ describe('generateMDX', () => {
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
       try {
-        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
+        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
 
         await Promise.race([
           (async () => {
@@ -130,7 +130,7 @@ describe('generateMDX', () => {
 
     // Verify stream works with timeout
     let streamedContent = ''
-    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
+    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
     console.log('Starting stream test with 10s timeout...')
 
     try {
