@@ -148,24 +148,34 @@ describe('CLI', () => {
       model: openai.chat('gpt-4o-mini'), // Use chat model instance directly
       system: `You are an expert MDX content generator specializing in JSX components. Generate content that:
 1. Follows https://schema.org/Article schema
-2. Uses JSX components throughout the content (like <Button>, <Card>, <Alert>)
-3. Properly capitalizes component names (e.g., <Card> not <card>)
+2. MUST use JSX components frequently in the content
+3. Use components like <Button>, <Card>, and <Alert> naturally in the text
+4. Always capitalize component names (e.g., <Card> not <card>)
 
-The content MUST start with YAML frontmatter between --- markers containing:
+The content MUST start with YAML frontmatter exactly like this:
 ---
 $type: https://schema.org/Article
-title: [descriptive title]
-description: [brief description]
+title: Example Title
+description: Brief description
 ---
 
-The frontmatter MUST:
-1. Start and end with --- on their own lines
-2. Include $type field with the schema type (no quotes)
+STRICT frontmatter rules:
+1. Start with --- on its own line (no spaces)
+2. Include $type: https://schema.org/Article (no quotes)
 3. Include title and description fields
-4. Use proper YAML indentation
+4. Use 2-space YAML indentation
+5. End with --- on its own line
 
-Keep content concise (around 100 tokens) and include at least one heading.
-IMPORTANT: Always include the frontmatter with $type field exactly as shown above.`,
+Content requirements:
+1. At least 2 main sections with ## headings
+2. Use components frequently and naturally
+3. Keep total length around 100 tokens
+4. Include example components like:
+   <Alert>Important note about the topic</Alert>
+   <Button onClick={() => {}}>Click me</Button>
+   <Card><p>Card content here</p></Card>
+
+IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
       prompt: instructions,
       maxTokens: 100,
       temperature: 0.3, // Lower temperature for more consistent output
@@ -358,4 +368,4 @@ IMPORTANT: Always include the frontmatter with $type field exactly as shown abov
       throw error
     }
   })
-})                                                                     
+})                                                                        

@@ -30,10 +30,10 @@ export async function generateMDX(options: GenerateOptions) {
 
   // Construct the system prompt
   const system = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
-${components.length > 0 ? `Use these components where appropriate: ${components.join(', ')}` : ''}
+${components.length > 0 ? `You MUST use these components in the content (required): ${components.join(', ')}` : ''}
 Important: Return ONLY the raw MDX content. Do not wrap it in code blocks or add any formatting.
 
-The content MUST start with YAML frontmatter between --- markers, like this:
+The content MUST start with YAML frontmatter between --- markers, exactly like this:
 ---
 $type: https://schema.org/Article
 title: Example Title
@@ -41,17 +41,22 @@ description: Brief description
 ---
 
 The frontmatter MUST:
-1. Start and end with --- on their own lines
-2. Include either $type or @type field with the schema type
+1. Start and end with --- on their own lines (no extra spaces)
+2. Include $type field with the schema type (no quotes)
 3. Include title and description fields
-4. Use proper YAML indentation
-5. Not use quotes around the schema type value
+4. Use proper YAML indentation (2 spaces)
 
-Generate comprehensive content with:
-1. Multiple sections (at least 2) using proper headings (# for main title, ## for sections)
-2. React components where appropriate (e.g., <Alert>, <Button>, etc.)
-3. References to any provided input content
-4. Around 500 tokens total length.`
+Content requirements:
+1. At least 2 main sections with proper headings
+2. Use provided components frequently (${components.length > 0 ? `especially: ${components.join(', ')}` : 'if any provided'})
+3. Include any provided input content
+4. Keep total length around ${maxTokens || 100} tokens
+5. Use components naturally in the content flow
+
+Example component usage:
+<Alert>Important note about the topic</Alert>
+<Button onClick={() => {}}>Click me</Button>
+<Card><p>Card content here</p></Card>`
 
   // Construct the user prompt
   const prompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${

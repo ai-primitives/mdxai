@@ -214,8 +214,9 @@ describe('generateMDX', () => {
       const componentPatterns = [
         /<[A-Z][A-Za-z]*[^>]*>/,  // Match any capitalized component
         /<(Button|Card|Alert)[^>]*>/i,  // Match specific components
-        /[{<][A-Z][A-Za-z]*\s+/,  // Match component with props
-        /<[A-Z][A-Za-z]*\s*\/>/  // Match self-closing components
+        /[{<][A-Z][A-Za-z]*\s+[^>]*>/,  // Match component with props
+        /<[A-Z][A-Za-z]*\s*\/>/,  // Match self-closing components
+        /<[A-Z][A-Za-z]*>[^<]*<\/[A-Z][A-Za-z]*>/  // Match components with content
       ]
       
       // More flexible component validation with detailed logging
