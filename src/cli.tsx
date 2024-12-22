@@ -1,14 +1,22 @@
 #!/usr/bin/env node
 import React, { useState, useEffect } from 'react'
 import { render } from 'ink'
-import meow from 'meow'
-import Spinner from 'ink-spinner'
-import TextInput from 'ink-text-input'
 import { Box, Text } from 'ink'
+import meow from 'meow'
 import { generateMDX } from './index.js'
+import { glob } from 'glob'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+interface GenerateOptions {
+  type: string
+  filepath?: string
+  instructions?: string
+}
 
 const cli = meow(`
     Usage
+      $ mdxai <filepath> <instructions...>
       $ mdxai <command> [options]
 
     Commands
@@ -16,35 +24,111 @@ const cli = meow(`
       init       Initialize configuration
 
     Options
-      --type     Schema type
-      --concurrency  Number of concurrent operations
+      --type     Schema type (default: https://schema.org/Article)
+      --concurrency  Number of concurrent operations (default: 4)
 
     Examples
+      $ mdxai blog/future-of-ai.mdx write a blog post about the future of AI
+      $ mdxai blog/future-of-ai.mdx add more real-world examples from recent news
+      $ mdxai content/**/* change the voice of the content to be more conversational
       $ mdxai generate ./content --type="https://schema.org/Article"
-`)
+`, {
+  importMeta: import.meta,
+  flags: {
+    type: {
+      type: 'string',
+      default: 'https://schema.org/Article'
+    },
+    concurrency: {
+      type: 'number',
+      default: 4
+    }
+  }
+})
+
+interface ProcessingStatus {
+  total: number
+  completed: number
+  current: string
+  error?: string
+}
 
 export const App = () => {
-  const [status, setStatus] = useState('Processing')
+  const [status, setStatus] = useState<ProcessingStatus>({ total: 0, completed: 0, current: 'Initializing...' })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const command = cli.input[0]
-    const options = cli.flags
-
     const handleCommand = async () => {
       try {
-        if (command === 'generate') {
-          setStatus('Generating MDX content...')
+        // Split input into command/filepath and remaining args
+        const [firstArg, ...remainingArgs] = cli.input
+
+        // Handle direct filepath + instructions pattern
+        if (firstArg && !firstArg.startsWith('-') && firstArg !== 'generate' && firstArg !== 'init') {
+          const filepath = firstArg
+          // Join all remaining args as the instructions
+          const instructions = remainingArgs.join(' ')
+          
+          if (!instructions) {
+            setError('Instructions are required when processing files')
+            return
+          }
+          
+          if (filepath.includes('*')) {
+            // Handle glob pattern
+            const files = await glob(filepath, { absolute: false })
+            if (!files.length) {
+              setError(`No files found matching pattern: ${filepath}`)
+              return
+            }
+            
+            setStatus(prev => ({ ...prev, total: files.length, current: 'Processing multiple files...' }))
+            
+            // Process files concurrently with limit
+            const chunks: string[][] = []
+            for (let i = 0; i < files.length; i += cli.flags.concurrency) {
+              chunks.push(files.slice(i, i + cli.flags.concurrency))
+            }
+            
+            for (const chunk of chunks) {
+              await Promise.all(chunk.map(async (file: string) => {
+                setStatus(prev => ({ ...prev, current: `Processing ${file}...` }))
+                await generateMDX({
+                  type: cli.flags.type,
+                  filepath: file,
+                  instructions
+                } as GenerateOptions)
+                setStatus(prev => ({ 
+                  ...prev, 
+                  completed: prev.completed + 1,
+                  current: `Completed ${prev.completed + 1}/${prev.total} files`
+                }))
+              }))
+            }
+          } else {
+            // Handle single file
+            setStatus(prev => ({ ...prev, current: `Processing ${filepath}...` }))
+            await generateMDX({
+              type: cli.flags.type,
+              filepath,
+              instructions
+            } as GenerateOptions)
+            setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+          }
+        }
+        // Handle command-based usage
+        else if (firstArg === 'generate') {
+          setStatus(prev => ({ ...prev, current: 'Generating MDX content...' }))
           await generateMDX({
-            type: (options.type as string) || 'https://schema.org/Article'
+            type: cli.flags.type
           })
-          setStatus('Generation complete!')
-        } else if (command === 'init') {
-          setStatus('Initializing configuration...')
+          setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+        } else if (firstArg === 'init') {
+          setStatus(prev => ({ ...prev, current: 'Initializing configuration...' }))
           // TODO: Implement init logic
-          setStatus('Initialization complete!')
+          setStatus(prev => ({ ...prev, current: 'Initialization complete!' }))
         } else {
-          setError('Unknown command')
+          setError('Unknown command. Run mdxai --help for usage information.')
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -59,15 +143,18 @@ export const App = () => {
       {error ? (
         <Text color="red">{error}</Text>
       ) : (
-        <Text>
-          <Spinner type="dots" /> {status}
-        </Text>
+        <Box>
+          <Text>
+            {status.current}
+            {status.total > 0 && ` (${status.completed}/${status.total})`}
+          </Text>
+        </Box>
       )}
     </Box>
   )
 }
 
 // Only render if this file is being run directly
-if (require.main === module) {
+if (import.meta.url === fileURLToPath(process.argv[1])) {
   render(<App />)
 }

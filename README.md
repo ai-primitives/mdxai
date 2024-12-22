@@ -34,16 +34,18 @@ Generate MDX content with real-time progress streaming:
 
 ```bash
 # Generate MDX from a directory using schema.org
-mdxai generate ./content --type="https://schema.org/Article"
+mdxai <filepath> <instructions to generate or edit content>
+```
 
-# Process multiple files with gs1.org context
-mdxai generate ./products/**/*.mdx --type="https://gs1.org/voc/Product"
+```bash
+# Generate MDX from a directory using schema.org
+mdxai blog/future-of-ai.mdx  write a blog post about the future of AI
 
-# Generate TypeScript documentation with mdx.org.ai
-mdxai generate ./docs --type="https://mdx.org.ai/TypeScript" --concurrency=4
+# Edit MDX content
+mdxai blog/future-of-ai.mdx  add more real-world examples from recent news
 
-# Process blog posts with real-time streaming
-mdxai generate ./blog --type="https://schema.org/BlogPosting" --stream
+# Work with multiple files
+mdxai content/**/* change the voice of the content to be more conversational
 ```
 
 The CLI provides real-time feedback and zero-config operation:
@@ -56,17 +58,24 @@ The CLI provides real-time feedback and zero-config operation:
 - Shows file processing progress with concurrent operations
 - Creates .generated.mdx files alongside originals
 
-### CLI Options
 
-```bash
-mdxai generate <paths...> --type <schema> [options]
+### YAML-LD Frontmatter
 
-Options:
-  --type <schema>     Schema type (e.g., https://schema.org/Article)
-  --concurrency <n>   Number of concurrent generations (default: 2)
-  -v, --version      Show version number
-  -h, --help         Show help
+MDX files can include MDX-LD/YAML-LD frontmatter:
+
+```yaml
+---
+# Using $ prefix for MDX-LD properties
+$type: https://schema.org/Article
+title: My Article
+description: An example article
+---
+
+# My Article
+
+This is an example article.
 ```
+
 
 ## SDK Usage
 
@@ -92,39 +101,3 @@ await new Promise((resolve, reject) => {
   stream.on('error', reject)
 })
 ```
-
-### YAML-LD Frontmatter
-
-MDX files can include YAML-LD frontmatter:
-
-```yaml
-# Using $ prefix for YAML-LD properties
-$type: https://schema.org/Article
-$context: https://schema.org
-title: My Article
-description: An example article
-```
-
-## Dependencies
-
-This package uses:
-
-- mdxld for MDX Linked Data processing
-- `ai` SDK for AI-powered content generation & editing
-- fs/promises (Node.js only) for CLI operations
-
-## Runtime Compatibility
-
-- CLI features use fs/promises and are Node.js only
-- Main package exports are compatible with browser and edge runtimes
-- Component generation works in all environments
-
-## Known Issues
-
-- CI/CD Pipeline
-  - Issue: Missing GitHub Actions workflows for automated testing
-  - Impact: Manual verification required for contributions
-  - Status: CI configuration is planned for implementation
-  - Note: Local testing can be performed using `pnpm test`
-
-For the latest updates and issue tracking, please visit our GitHub repository.
