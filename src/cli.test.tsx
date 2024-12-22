@@ -3,13 +3,8 @@ import { render } from 'ink-testing-library'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { App } from './cli.js'
 import { streamText } from 'ai'
-import { openai } from '@ai-sdk/openai'
 import path from 'path'
-
-// Configure model with appropriate settings for tests
-// Configure model with appropriate settings for tests
-// Configure model with appropriate settings for tests
-const model = openai.chat('gpt-4o-mini')
+import { defaultModel as model } from './utils/openai.js'
 
 import type * as ReactTypes from 'react'
 
@@ -376,4 +371,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                    
+})                                                                                                                                       
