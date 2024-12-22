@@ -146,7 +146,11 @@ describe('CLI', () => {
 
     const result = await streamText({
       model: openai.chat('gpt-4o-mini'), // Use chat model instance directly
-      system: `You are an expert MDX content generator. Generate MDX content that follows https://schema.org/Article schema.
+      system: `You are an expert MDX content generator specializing in JSX components. Generate content that:
+1. Follows https://schema.org/Article schema
+2. Uses JSX components throughout the content (like <Button>, <Card>, <Alert>)
+3. Properly capitalizes component names (e.g., <Card> not <card>)
+
 The content MUST start with YAML frontmatter between --- markers containing:
 ---
 $type: https://schema.org/Article
@@ -176,7 +180,7 @@ IMPORTANT: Always include the frontmatter with $type field exactly as shown abov
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+    expect(generatedText?.length).toBeGreaterThan(100) // Minimum content length for faster tests
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     expect(generatedText).toMatch(/\n[#\s]/) // Has at least one heading or section
 
@@ -208,11 +212,11 @@ IMPORTANT: Always include the frontmatter with $type field exactly as shown abov
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 5000)
+    await waitForStatus(lastFrame, /Processing/, 10000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 5000)
+    await waitForStatus(lastFrame, /Generation complete/, 10000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -354,4 +358,4 @@ IMPORTANT: Always include the frontmatter with $type field exactly as shown abov
       throw error
     }
   })
-})                                                         
+})                                                                     

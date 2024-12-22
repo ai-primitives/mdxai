@@ -7,16 +7,16 @@ export default defineConfig({
     testTimeout: 10000, // 10 second timeout per test
     hookTimeout: 10000, // Consistent 10s timeout
     teardownTimeout: 10000, // Consistent 10s timeout
-    setupFiles: ['dotenv/config'],
-    fileParallelism: true,
-    maxConcurrency: 20,
+    maxConcurrency: 20, // Maximum concurrent tests
     pool: 'threads',
     poolOptions: {
       threads: {
         singleThread: false,
-        maxThreads: 20
+        maxThreads: 20 // Use all available threads
       }
     },
+    setupFiles: ['dotenv/config'],
+    fileParallelism: true,
     retry: 2, // Retry failed tests up to 2 times
     sequence: {
       shuffle: true // Randomize test order to catch ordering issues
