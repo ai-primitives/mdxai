@@ -85,8 +85,8 @@ describe('CLI', () => {
 
     try {
       // Wait for processing to complete with better timeout handling
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000) // Use consistent 10s timeout
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, TEST_TIMEOUT)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, TEST_TIMEOUT) // Use consistent timeout
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -108,8 +108,8 @@ describe('CLI', () => {
     const { lastFrame } = render(<App />)
 
     try {
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, TEST_TIMEOUT)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, TEST_TIMEOUT)
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -273,7 +273,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to complete
     console.log('Waiting for processing to complete...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, TEST_TIMEOUT)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -441,4 +441,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                  
+})                              

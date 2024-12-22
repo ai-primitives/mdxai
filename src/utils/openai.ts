@@ -12,5 +12,5 @@ export const openAIClient = createOpenAICompatible({
 
 // Default model configuration with consistent settings
 export const defaultModel: LanguageModelV1 = openAIClient('gpt-4o-mini', {
-  simulateStreaming: false // Ensure native streaming for better performance
+  simulateStreaming: false // Use native streaming for better performance
 })
