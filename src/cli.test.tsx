@@ -51,6 +51,7 @@ vi.mock('react', async () => {
 })
 
 describe('CLI', () => {
+  vi.setConfig({ testTimeout: 30000 }) // Set timeout for all tests in this suite
   beforeEach(() => {
     // Clear process.argv and reset mocks before each test
     process.argv = ['node', 'mdxai']
@@ -72,8 +73,8 @@ describe('CLI', () => {
 
     try {
       // Wait for processing to complete with better timeout handling
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 30000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 30000) // Use consistent 30s timeout
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000) // Use consistent 10s timeout
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -134,6 +135,7 @@ describe('CLI', () => {
   })
 
   it('generates MDX content with proper frontmatter and schema', async () => {
+    vi.setConfig({ testTimeout: 30000 }) // Ensure proper timeout for AI generation
     console.log('Starting MDX generation test...')
     const startTime = Date.now()
     const filepath = 'blog/test-article.mdx'
@@ -222,11 +224,11 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 30000)
+    await waitForStatus(lastFrame, /Processing/, 10000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 30000)
+    await waitForStatus(lastFrame, /Generation complete/, 10000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -297,6 +299,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
   })
 
   it('generates MDX content using AI SDK', async () => {
+    vi.setConfig({ testTimeout: 30000 }) // Ensure proper timeout for AI SDK test
     process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article', '--model', 'gpt-4o-mini', '--max-tokens', '100']
 
     const { lastFrame } = render(<App />)
@@ -371,4 +374,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                             
+})                                                                                                                                                         
