@@ -13,7 +13,7 @@ const model = openai.chat('gpt-4o-mini')
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 5000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -226,11 +226,11 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, 5000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    await waitForStatus(lastFrame, /Generation complete/, 5000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -270,7 +270,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     try {
       // Wait for generation to complete with better timeout handling
       console.log('Waiting for generation to complete...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
       
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -366,7 +366,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
 
       // Verify the CLI output with better timeout handling
       console.log('Waiting for CLI output...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 5000)
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
@@ -375,4 +375,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                            
+})                                                                                                                  

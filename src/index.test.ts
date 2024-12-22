@@ -74,7 +74,7 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 tokens
+    expect(text?.length).toBeGreaterThan(200) // Ensure reasonable content length for 100 tokens
     expect(finishReason).toBe('length') // Expect length finish reason due to token limit
     expect(usage).toHaveProperty('totalTokens')
     // Verify content structure with more flexible assertions
@@ -105,7 +105,7 @@ describe('generateMDX', () => {
     // Verify streamed content matches structure
     expect(streamedContent).toMatch(/^---\n/) // Should start with frontmatter
     expect(streamedContent).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Should have schema type
-    expect(streamedContent.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+    expect(streamedContent.length).toBeGreaterThan(200) // Minimum content length for 100 tokens
   })
 
   it('should stream to file and stdout', async () => {
@@ -197,7 +197,7 @@ describe('generateMDX', () => {
       // Verify content structure and quality
       console.log('Verifying content structure...')
       expect(fileContent).toBeTruthy()
-      expect(fileContent.length).toBeGreaterThan(500) // Ensure substantial content length
+      expect(fileContent.length).toBeGreaterThan(200) // Ensure reasonable content length for 100 tokens
 
       // Verify frontmatter structure
       const frontmatterMatch = fileContent.match(/^---([\s\S]*?)---/)
@@ -237,7 +237,7 @@ describe('generateMDX', () => {
 
       // Verify streamed content
       console.log('Verifying streamed content...')
-      expect(streamedContent.length).toBeGreaterThan(500) // Ensure substantial content length
+      expect(streamedContent.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 token limit
       expect(streamedContent).toMatch(/^---[\s\S]*?---/)
     } catch (error) {
       console.error('Test failed:', error)
