@@ -14,6 +14,7 @@ interface CliGenerateOptions {
   instructions?: string
   maxTokens?: number
   model?: string
+  components?: string[]
 }
 
 const cli = meow(
@@ -49,12 +50,14 @@ const cli = meow(
       },
       maxTokens: {
         type: 'number',
-        default: 500,
-        shortFlag: 'max-tokens',
+        default: 100,
       },
       model: {
         type: 'string',
         default: 'gpt-4o-mini',
+      },
+      components: {
+        type: 'string',
       },
     },
   },
@@ -68,7 +71,7 @@ interface ProcessingStatus {
 }
 
 export const App = () => {
-  const [status, setStatus] = useState<ProcessingStatus>({ total: 0, completed: 0, current: 'Initializing...' })
+  const [status, setStatus] = useState<ProcessingStatus>({ total: 0, completed: 0, current: 'Processing' })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -77,8 +80,29 @@ export const App = () => {
         // Split input into command/filepath and remaining args
         const [firstArg, ...remainingArgs] = cli.input
 
+        // Handle generate command
+        if (firstArg === 'generate' || (!firstArg && cli.flags.type)) {
+          setStatus((prev) => ({ ...prev, current: 'Processing' }))
+          await generateMDX({
+            type: cli.flags.type,
+            maxTokens: cli.flags.maxTokens || 100,
+            model: 'gpt-4o-mini',
+            components: typeof cli.flags.components === 'string' ? cli.flags.components.split(',') : undefined,
+          } as CliGenerateOptions)
+          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+          return
+        }
+
+        // Handle init command
+        if (firstArg === 'init') {
+          setStatus((prev) => ({ ...prev, current: 'Processing' }))
+          // TODO: Implement init logic
+          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+          return
+        }
+
         // Handle direct filepath + instructions pattern
-        if (firstArg && !firstArg.startsWith('-') && firstArg !== 'generate' && firstArg !== 'init') {
+        if (firstArg && !firstArg.startsWith('-')) {
           const filepath = firstArg
           // Join all remaining args as the instructions
           const instructions = remainingArgs.join(' ')
@@ -96,7 +120,7 @@ export const App = () => {
               return
             }
 
-            setStatus((prev) => ({ ...prev, total: files.length, current: 'Processing multiple files...' }))
+            setStatus((prev) => ({ ...prev, total: files.length, current: 'Processing multiple files' }))
 
             // Process files concurrently with limit
             const chunks: string[][] = []
@@ -107,12 +131,12 @@ export const App = () => {
             for (const chunk of chunks) {
               await Promise.all(
                 chunk.map(async (file: string) => {
-                  setStatus((prev) => ({ ...prev, current: `Processing ${file}...` }))
+                  setStatus((prev) => ({ ...prev, current: `Processing ${file}` }))
                   await generateMDX({
                     type: cli.flags.type,
                     filepath: file,
                     instructions,
-                    maxTokens: cli.flags.maxTokens,
+                    maxTokens: cli.flags.maxTokens || 100,
                     model: 'gpt-4o-mini',
                   } as CliGenerateOptions)
                   setStatus((prev) => ({
@@ -123,34 +147,27 @@ export const App = () => {
                 }),
               )
             }
-          } else {
-            // Handle single file
-            setStatus((prev) => ({ ...prev, current: `Processing ${filepath}...` }))
-            await generateMDX({
-              type: cli.flags.type,
-              filepath,
-              instructions,
-              maxTokens: cli.flags.maxTokens,
-              model: 'gpt-4o-mini',
-            } as CliGenerateOptions)
-            setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+            return
           }
-        }
-        // Handle command-based usage
-        else if (firstArg === 'generate') {
-          setStatus((prev) => ({ ...prev, current: 'Processing' }))
+
+          // Handle single file
+          setStatus((prev) => ({ ...prev, current: `Processing ${filepath}` }))
           await generateMDX({
             type: cli.flags.type,
-            maxTokens: cli.flags.maxTokens,
+            filepath,
+            instructions,
+            maxTokens: cli.flags.maxTokens || 100,
             model: 'gpt-4o-mini',
           } as CliGenerateOptions)
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
-        } else if (firstArg === 'init') {
-          setStatus((prev) => ({ ...prev, current: 'Processing' }))
-          // TODO: Implement init logic
-          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
-        } else {
+          return
+        }
+
+        // Handle unknown command
+        if (firstArg) {
           setError('Unknown command. Run mdxai --help for usage information.')
+        } else {
+          setError('No command provided. Run mdxai --help for usage information.')
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')

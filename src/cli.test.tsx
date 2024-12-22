@@ -188,7 +188,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(500) // Minimum content length for generated text
+    expect(generatedText?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     expect(generatedText).toMatch(/\n[#\s]/) // Has at least one heading or section
 
@@ -341,4 +341,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})
+})   
