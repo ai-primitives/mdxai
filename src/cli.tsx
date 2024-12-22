@@ -45,6 +45,10 @@ const cli = meow(
         type: 'number',
         default: 4,
       },
+      maxTokens: {
+        type: 'number',
+        default: 100,
+      },
     },
   },
 )
@@ -123,15 +127,18 @@ export const App = () => {
         }
         // Handle command-based usage
         else if (firstArg === 'generate') {
-          setStatus((prev) => ({ ...prev, current: 'Generating MDX content...' }))
+          setStatus((prev) => ({ ...prev, current: 'Processing...' }))
           await generateMDX({
             type: cli.flags.type,
+            maxTokens: cli.flags.maxTokens || 100,
           })
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
         } else if (firstArg === 'init') {
-          setStatus((prev) => ({ ...prev, current: 'Initializing configuration...' }))
+          setStatus((prev) => ({ ...prev, current: 'Processing...' }))
           // TODO: Implement init logic
-          setStatus((prev) => ({ ...prev, current: 'Initialization complete!' }))
+          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+        } else if (!firstArg) {
+          setError('No command provided. Run mdxai --help for usage information.')
         } else {
           setError('Unknown command. Run mdxai --help for usage information.')
         }
