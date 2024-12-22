@@ -4,12 +4,30 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { App } from './cli.js'
 import { streamText } from 'ai'
 import path from 'path'
-import { defaultModel as model } from './utils/openai.js'
-import { openAIClient } from './utils/openai.js'
+import { defaultModel } from './utils/openai.js'
 import type * as ReactTypes from 'react'
 
+// Test configuration
+const TEST_TIMEOUT = 10000 // 10 second timeout for all tests
+const MAX_TOKENS = 100 // Token limit for faster test execution
+
+// Type definitions for AI responses
+interface StreamTextResult {
+  text: Promise<string>
+  finishReason: Promise<string>
+  usage: Promise<{ totalTokens: number }>
+}
+
+// Test configuration
+// Type definitions for test responses
+interface StreamTextResult {
+  text: Promise<string>
+  finishReason: Promise<string>
+  usage: Promise<{ totalTokens: number }>
+}
+
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = TEST_TIMEOUT) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -51,7 +69,7 @@ vi.mock('react', async () => {
 })
 
 describe('CLI', () => {
-  vi.setConfig({ testTimeout: 10000 }) // Set consistent 10s timeout for all tests
+  vi.setConfig({ testTimeout: TEST_TIMEOUT }) // Set consistent timeout for all tests
   beforeEach(() => {
     // Clear process.argv and reset mocks before each test
     process.argv = ['node', 'mdxai']
@@ -94,26 +112,44 @@ describe('CLI', () => {
     process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame } = render(<App />)
-    console.log('Starting content editing test...')
 
     try {
-      // Wait for processing to complete with better timeout handling
       await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
       await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
 
-      // More flexible assertions for non-deterministic responses
+      // Verify the frame content
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
-      // Only check for filepath if generation is complete
-      if (frame.includes('complete') || frame.includes('Completed')) {
-        expect(frame).toContain(filepath)
-      }
+      
+      // Verify the generated content
+      const result: StreamTextResult = await streamText({
+        model: defaultModel,
+        maxTokens: MAX_TOKENS,
+        system: 'Generate MDX content with proper frontmatter',
+        prompt: instructions
+      })
+
+      const generatedText = await result.text
+      expect(generatedText).toBeTruthy()
+      expect(typeof generatedText).toBe('string')
+      expect(generatedText.length).toBeGreaterThan(100)
+
+      // Verify frontmatter structure
+      const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
+      expect(frontmatterMatch).toBeTruthy()
+      const frontmatter = frontmatterMatch?.[1] || ''
+      expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/)
+      expect(frontmatter).toMatch(/title:\s*.+/m)
+      expect(frontmatter).toMatch(/description:\s*.+/m)
+
+      // Verify content structure
+      const content = generatedText.toString().split(/---\s*\n/)[2] || ''
+      expect(content).toMatch(/^#{1,2}\s+\w+/m)
+      expect(content.split('\n').length).toBeGreaterThan(10)
     } catch (error) {
       console.error('Test failed:', error)
-      const frame = lastFrame()
-      console.error('Last frame state:', frame)
       throw error
     }
   })
@@ -135,7 +171,6 @@ describe('CLI', () => {
   })
 
   it('generates MDX content with proper frontmatter and schema', async () => {
-    vi.setConfig({ testTimeout: 10000 }) // Use consistent 10s timeout for AI tests
     console.log('Starting MDX generation test...')
     const startTime = Date.now()
     const filepath = 'blog/test-article.mdx'
@@ -144,8 +179,8 @@ describe('CLI', () => {
 
     const { lastFrame } = render(<App />)
 
-    const result = await streamText({
-      model, // Use consistent model instance from top of file
+    const result: StreamTextResult = await streamText({
+      model: defaultModel, // Use consistent model instance
       system: `You are an expert MDX content generator specializing in JSX components. Generate content that:
 1. Follows https://schema.org/Article schema
 2. MUST use JSX components frequently in the content
@@ -260,22 +295,46 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
   })
 
   it('handles generate command with content', async () => {
-    process.argv = ['node', 'mdxai', 'generate', '--model', 'gpt-4o-mini']
+    process.argv = ['node', 'mdxai', 'generate', '--model', 'gpt-4o-mini', '--max-tokens', '100']
     const content = '# Test Content\nThis is some test content.'
 
     const { lastFrame } = render(<App />)
 
     try {
-      // Wait for generation to complete with better timeout handling
-      console.log('Waiting for generation to complete...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, TEST_TIMEOUT)
       
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
+
+      // Verify CLI output
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
-      
-      // Log frame content for debugging
-      console.log('Final frame content:', frame)
+
+      // Verify generated content
+      const testContent = content // Store content in a new variable to fix block-scoping
+      const result: StreamTextResult = await streamText({
+        model: defaultModel,
+        maxTokens: MAX_TOKENS,
+        system: 'Generate MDX content with proper frontmatter',
+        prompt: testContent
+      })
+
+      const generatedText: string = await result.text
+      expect(generatedText).toBeTruthy()
+      expect(typeof generatedText).toBe('string')
+      expect(generatedText.length).toBeGreaterThan(100)
+
+      // Verify frontmatter
+      const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
+      expect(frontmatterMatch).toBeTruthy()
+      const frontmatter: string = frontmatterMatch?.[1] || ''
+      expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/)
+      expect(frontmatter).toMatch(/title:\s*.+/m)
+      expect(frontmatter).toMatch(/description:\s*.+/m)
+
+      // Verify content structure
+      const parsedContent: string = generatedText.toString().split(/---\s*\n/)[2] || ''
+      expect(parsedContent).toMatch(/^#{1,2}\s+\w+/m)
+      expect(parsedContent.split('\n').length).toBeGreaterThan(10)
     } catch (error) {
       console.error('Test failed:', error)
       throw error
@@ -299,7 +358,6 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
   })
 
   it('generates MDX content using AI SDK', async () => {
-    // Using global 10s timeout from test suite configuration
     process.argv = [
   'node', 'mdxai', 'generate',
   '--type=https://schema.org/Article',
@@ -314,8 +372,8 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     console.log('Starting AI SDK test...')
 
     try {
-      const result = await streamText({
-        model,
+      const result: StreamTextResult = await streamText({
+        model: defaultModel,
         system: `You are an expert MDX content generator. Generate content that:
 1. MUST start with proper frontmatter (--- on its own line)
 2. MUST include $type: https://schema.org/Article (no quotes)
@@ -341,9 +399,9 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       })
 
       console.log('Generation completed, verifying results...')
-      const generatedText = await result.text
-      const finishReason = await result.finishReason
-      const usage = await result.usage
+      const generatedText: string = await result.text
+      const finishReason: string = await result.finishReason
+      const usage: { totalTokens: number } = await result.usage
 
       // Verify the generated content quality and structure
       console.log('Generated text length:', generatedText?.length)
@@ -362,9 +420,9 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
 
       // Verify content structure with more flexible validation
       console.log('Verifying content structure...')
-      const content = generatedText.toString().split(/---\s*\n/)[2] || ''
-      expect(content).toMatch(/^#\s+\w+/m) // Has a heading
-      expect(content.length).toBeGreaterThan(100) // Ensure minimum content length with token limit
+      const parsedContent: string = generatedText.toString().split(/---\s*\n/)[2] || ''
+      expect(parsedContent).toMatch(/^#\s+\w+/m) // Has a heading
+      expect(parsedContent.length).toBeGreaterThan(100) // Ensure minimum content length with token limit
 
       // Verify the generation completed successfully
       console.log('Verifying completion status...')
@@ -382,4 +440,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                                                        
+})                                                                                                                                                                                                   
