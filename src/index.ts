@@ -20,7 +20,8 @@ export async function generateMDX(options: GenerateOptions) {
 
   // Construct the system prompt
   const systemPrompt = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
-${components.length > 0 ? `Use these components where appropriate: ${components.join(', ')}` : ''}`
+${components.length > 0 ? `Use these components where appropriate: ${components.join(', ')}` : ''}
+Important: Return ONLY the raw MDX content. Do not wrap it in code blocks or add any formatting.`
 
   // Construct the user prompt
   const userPrompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${
@@ -45,6 +46,14 @@ Include appropriate frontmatter with schema.org metadata.`
       content += chunk
     }
 
+    // Clean up any code block wrapping and extra whitespace
+    content = content
+      .replace(/^```mdx?\n/g, '')  // Remove opening code block
+      .replace(/\n```$/g, '')      // Remove closing code block
+      .replace(/^```\n/g, '')      // Remove any other code blocks
+      .replace(/\n```\n/g, '\n')   // Remove inline code blocks
+      .trim()                      // Remove extra whitespace
+
     // If filepath is provided, ensure the directory exists and write to file
     if (filepath) {
       try {
@@ -56,7 +65,7 @@ Include appropriate frontmatter with schema.org metadata.`
         if (error instanceof Error) {
           console.error(`Error writing to file: ${error.message}`)
         }
-        throw error
+        throw new Error(`Failed to write to file: ${filepath}`)
       }
     }
 
