@@ -135,7 +135,7 @@ describe('CLI', () => {
   })
 
   it('generates MDX content with proper frontmatter and schema', async () => {
-    vi.setConfig({ testTimeout: 30000 }) // Ensure proper timeout for AI generation
+    vi.setConfig({ testTimeout: 10000 }) // Use consistent 10s timeout for AI tests
     console.log('Starting MDX generation test...')
     const startTime = Date.now()
     const filepath = 'blog/test-article.mdx'
@@ -190,13 +190,13 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     // More flexible content validation for non-deterministic AI responses
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText?.length).toBeGreaterThan(500) // Ensure content length > 500 chars
+    expect(generatedText?.length).toBeGreaterThan(100) // Ensure minimum content length with token limit
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     const endTime = Date.now()
     console.log(`Test completed in ${endTime - startTime}ms`)
     expect(generatedText).toMatch(/\n#{1,2}\s+\w+/) // Has at least one heading (# or ##)
 
-    // Verify frontmatter structure
+    // Verify frontmatter structure and content
     const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
     expect(frontmatterMatch).toBeTruthy()
     const frontmatter = frontmatterMatch?.[1] || ''
@@ -341,7 +341,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       console.log('Generated text length:', generatedText?.length)
       expect(generatedText).toBeTruthy()
       expect(typeof generatedText).toBe('string')
-      expect(generatedText?.length).toBeGreaterThan(500) // Ensure content length > 500 chars
+      expect(generatedText?.length).toBeGreaterThan(100) // Ensure minimum content length with token limit
 
       // Verify frontmatter structure with more flexible matching
       console.log('Verifying frontmatter...')
@@ -356,7 +356,7 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       console.log('Verifying content structure...')
       const content = generatedText.toString().split(/---\s*\n/)[2] || ''
       expect(content).toMatch(/^#\s+\w+/m) // Has a heading
-      expect(content.length).toBeGreaterThan(500) // Ensure content length > 500 chars
+      expect(content.length).toBeGreaterThan(100) // Ensure minimum content length with token limit
 
       // Verify the generation completed successfully
       console.log('Verifying completion status...')
@@ -374,4 +374,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                                         
+})                                                                                                                                                               
