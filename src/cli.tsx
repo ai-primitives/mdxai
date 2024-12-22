@@ -5,6 +5,7 @@ import { Box, Text } from 'ink'
 import meow from 'meow'
 import { generateMDX } from './index.js'
 import { glob } from 'glob'
+// Import generateMDX which uses the configured OpenAI client with name parameter
 import path from 'path'
 import { fileURLToPath } from 'url'
 

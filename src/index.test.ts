@@ -1,10 +1,23 @@
 import { describe, it, expect, vi } from 'vitest'
-import { generateMDX } from './index.js'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import 'dotenv/config'
-import { openai } from '@ai-sdk/openai'
+import { generateMDX } from './index.js'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+
+// Configure test timeout and token limits
+const TEST_TIMEOUT = 10000 // 10 second timeout
+const MAX_TOKENS = 100 // Limit tokens for faster tests
+
+// Configure OpenAI client for tests
+const openAIClient = createOpenAICompatible({
+  baseURL: process.env.AI_GATEWAY || 'https://api.openai.com/v1',
+  headers: {
+    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+  },
+  name: 'openai'
+})
 
 // Add setTimeout to global scope for ESLint
 const { setTimeout } = globalThis

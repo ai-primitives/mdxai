@@ -12,7 +12,8 @@ const openAIClient = createOpenAICompatible({
   baseURL: process.env.AI_GATEWAY || 'https://api.openai.com/v1',
   headers: {
     'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-  }
+  },
+  name: 'openai'
 })
 
 const defaultModel = openAIClient('gpt-4o-mini')
