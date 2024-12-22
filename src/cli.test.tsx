@@ -5,11 +5,11 @@ import { App } from './cli.js'
 import { streamText } from 'ai'
 import path from 'path'
 import { defaultModel as model } from './utils/openai.js'
-
+import { openAIClient } from './utils/openai.js'
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 30000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -72,8 +72,8 @@ describe('CLI', () => {
 
     try {
       // Wait for processing to complete with better timeout handling
-      await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000) // Use consistent 10s timeout
+      await waitForStatus(lastFrame, /(Processing|Initializing)/, 30000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 30000) // Use consistent 30s timeout
 
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -222,11 +222,11 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, 30000)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    await waitForStatus(lastFrame, /Generation complete/, 30000)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -266,7 +266,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     try {
       // Wait for generation to complete with better timeout handling
       console.log('Waiting for generation to complete...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 30000)
       
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -304,7 +304,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     try {
       const result = await streamText({
-        model: openai.chat('gpt-4o-mini'),
+        model,
         system: `You are an expert MDX content generator. Generate content that:
 1. MUST start with proper frontmatter (--- on its own line)
 2. MUST include $type: https://schema.org/Article (no quotes)
@@ -371,4 +371,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                       
+})                                                                                                                                             
