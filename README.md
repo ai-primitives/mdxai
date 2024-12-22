@@ -41,8 +41,8 @@ mdxai <filepath> <instructions to generate or edit content>
 # Generate MDX from a directory using schema.org
 mdxai blog/future-of-ai.mdx  write a blog post about the future of AI
 
-# Edit MDX content
-mdxai blog/future-of-ai.mdx  add more real-world examples from recent news
+# Edit MDX content (.mdx extension is optional)
+mdxai blog/future-of-ai  add more real-world examples from recent news
 
 # Work with multiple files
 mdxai content/**/* change the voice of the content to be more conversational
@@ -66,12 +66,13 @@ MDX files can include MDX-LD/YAML-LD frontmatter:
 ```yaml
 ---
 # Using $ prefix for MDX-LD properties
+$id: https://example.com/my-example-article
 $type: https://schema.org/Article
-title: My Article
+title: My Example Article
 description: An example article
 ---
 
-# My Article
+# My Example Article
 
 This is an example article.
 ```
