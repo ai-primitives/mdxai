@@ -4,6 +4,9 @@ import { openai } from '@ai-sdk/openai'
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
+// Add setTimeout to global scope for ESLint
+const { setTimeout } = globalThis
+
 const model = openai(process.env.OPENAI_MODEL || 'gpt-4o-mini')
 
 export interface GenerateOptions {

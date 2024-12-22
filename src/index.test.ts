@@ -34,7 +34,6 @@ describe('generateMDX', () => {
     // Verify stream works with timeout and proper completion
     let streamedContent = ''
     const maxRetries = 3
-    let lastError = null
     
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
@@ -62,7 +61,6 @@ describe('generateMDX', () => {
         // If we get here, streaming was successful
         break
       } catch (error) {
-        lastError = error
         console.error(`Stream attempt ${retry + 1} failed:`, error)
         if (retry === maxRetries - 1) {
           console.error('All stream attempts failed')
