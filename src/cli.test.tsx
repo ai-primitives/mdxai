@@ -297,30 +297,33 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
   })
 
   it('generates MDX content using AI SDK', async () => {
-    process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article', '--model', 'gpt-4o-mini']
+    process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article', '--model', 'gpt-4o-mini', '--max-tokens', '100']
 
     const { lastFrame } = render(<App />)
     console.log('Starting AI SDK test...')
 
     try {
       const result = await streamText({
-        model: openai.chat('gpt-4o-mini'),  // Use chat model instance directly
-        system: `You are an expert MDX content generator. Generate MDX content that follows https://schema.org/Article schema.
-The content MUST start with YAML frontmatter between --- markers containing:
+        model: openai.chat('gpt-4o-mini'),
+        system: `You are an expert MDX content generator. Generate content that:
+1. MUST start with proper frontmatter (--- on its own line)
+2. MUST include $type: https://schema.org/Article (no quotes)
+3. MUST include title and description
+4. MUST use JSX components naturally in the content
+5. Keep content around 100 tokens total
+
+Example format:
 ---
 $type: https://schema.org/Article
-title: [descriptive title]
-description: [brief description]
+title: Test Article
+description: A test article about AI testing
 ---
 
-The frontmatter MUST:
-1. Start and end with --- on their own lines
-2. Include $type field with the schema type (no quotes)
-3. Include title and description fields
-4. Use proper YAML indentation
+## Introduction
+Here's a <Button>Click me</Button> component.
 
-Keep content concise (around 100 tokens) and include at least one heading.
-IMPORTANT: Always include the frontmatter with $type field exactly as shown above.`,
+## Testing Approach
+Use <Alert>Important testing guidelines</Alert> for better results.`,
         prompt: 'Generate an article about AI testing.',
         maxTokens: 100,
         temperature: 0.3, // Lower temperature for more consistent output
@@ -368,4 +371,4 @@ IMPORTANT: Always include the frontmatter with $type field exactly as shown abov
       throw error
     }
   })
-})                                                                        
+})                                                                           

@@ -291,18 +291,42 @@ describe('generateMDX', () => {
   })
 
   it('should generate multiple versions when count > 1', async () => {
-    const { text } = await generateMDX({
-      type: 'https://schema.org/Article',
-      topic: 'Multiple Versions',
-      count: 2,
-      model: 'gpt-4o-mini',
-      maxTokens: 100,
-    })
+    console.log('Starting multiple versions test...')
+    try {
+      const { text } = await generateMDX({
+        type: 'https://schema.org/Article',
+        topic: 'Multiple Versions',
+        count: 2,
+        model: 'gpt-4o-mini',
+        maxTokens: 100,
+        temperature: 0.3, // Lower temperature for more consistent output
+      })
 
-    // Should have multiple article sections
-    const articleCount = (text.match(/^#\s+/gm) || []).length
-    // With 100 token limit, expect at least one section
-    expect(articleCount).toBeGreaterThanOrEqual(1)
+      console.log('Generated text length:', text?.length)
+      expect(text).toBeTruthy()
+      expect(text.length).toBeGreaterThan(100) // Minimum content length
+
+      // Verify frontmatter structure
+      const sections = text.split(/---\s*\n/)
+      expect(sections.length).toBeGreaterThanOrEqual(3) // At least one complete frontmatter section
+
+      // Check each section for proper structure
+      const contentSections = sections.slice(2) // Skip first empty section and first frontmatter
+      console.log(`Found ${contentSections.length} content sections`)
+      
+      for (const section of contentSections) {
+        // Log section details for debugging
+        console.log('Section length:', section.length)
+        console.log('Section preview:', section.slice(0, 100))
+        
+        // Verify section has basic content requirements
+        expect(section.length).toBeGreaterThan(50) // Each section should have meaningful content
+        expect(section).toMatch(/^#\s+\w+/m) // Should have a heading
+      }
+    } catch (error) {
+      console.error('Test failed:', error)
+      throw error
+    }
   })
 
   it('should handle file writing errors', async () => {
