@@ -1,30 +1,9 @@
 # Project Status and Tasks
 
-## Documentation Review
-
-- [x] README.md updated to reflect current project status and known issues
-- [x] TODO.md structure and content review in progress
-
-## Blockers
-
-- [x] Missing CI Configuration
-  - Error: No GitHub Actions workflows found in repository
-  - Impact: Preventing PR checks and automated testing
-  - Details: Repository lacks CI configuration for running tests and checks
-  - Location: Missing .github/workflows directory and workflow files
-  - Status: High priority - Required for automated testing and deployment
-  - Required: GitHub Actions workflow for build, test, and release
-  - Workaround: Tests can be run locally using `pnpm test`
-
 ## Implementation
 
-- [x] Core functionality
-  - [x] Basic MDXLD integration (parse/stringify)
-  - [x] Full MDXLD integration (v0.1.3)
-  - [x] AI Functions integration
-  - [x] Browser/Edge runtime support
-  - [ ] JavaScript/TypeScript import/export
-  - [ ] JSX/React UI component support
+- [ ] Core functionality
+  - [ ] MDXLD integration (parse/stringify)
 - [ ] CLI Implementation
   - [ ] fs/promises based file operations
   - [ ] Recursive directory processing
@@ -32,8 +11,8 @@
   - [ ] Multi-file processing
   - [ ] Component discovery
 - [ ] Documentation
-  - [x] Update README with features and usage
-  - [x] Document YAML-LD frontmatter
+  - [ ] Update README with features and usage
+  - [ ] Document YAML-LD frontmatter
   - [ ] Add API documentation
   - [ ] Add examples directory
   - [ ] Document component integration

@@ -3,18 +3,16 @@
 [![npm version](https://badge.fury.io/js/mdxai.svg)](https://www.npmjs.com/package/mdxai)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Zero-config CLI to recursively generate and update MDX structured data, unstructured content, import/export Javascript/TypeScript, and JSX/Reach UI components using MDXLD (Linked Data).
+Zero-config CLI to recursively generate and update MDX with frontmatter, structured data, and executable code, and JSX/React components.
 
 ## Features
 
 - 🚀 Zero-config MDX generation and updates
-- 📝 Support for schema.org, gs1.org, and mdx.org.ai contexts
-- 🔄 Recursive directory processing with concurrent execution (In Progress)
-- 📊 Real-time progress streaming to terminal (In Progress)
-- 🌐 Browser and edge runtime compatible (In Progress)
-- ⚡️ CLI powered by fs/promises for Node.js environments (In Progress)
-- 💻 Import/export JavaScript/TypeScript (In Progress)
-- 🎨 JSX/React UI component support (In Progress)
+- 📝 Support for schema.org and mdx.org.ai contexts & types
+- 🔄 Recursive directory processing with concurrent execution
+- 📊 Real-time progress streaming to terminal
+- 🌐 Browser and edge runtime compatible
+- ⚡️ CLI powered by fs/promises for Node.js environments
 
 ## Installation
 
@@ -27,10 +25,8 @@ npm install -g mdxai
 Or use with npx:
 
 ```bash
-npx mdxai generate ./content --type="https://schema.org/Article"
+npx mdxai hello-world write a blog post about the future of AI
 ```
-
-Note: This package depends on mdxld@0.1.3. While previous versions had issues with the parser module affecting test execution, the current version has resolved many of these issues. Please refer to the Known Issues section for any remaining concerns.
 
 ## CLI Usage
 
@@ -114,7 +110,7 @@ description: An example article
 This package uses:
 
 - mdxld for MDX Linked Data processing
-- ai-functions for AI-powered content generation
+- `ai` SDK for AI-powered content generation & editing
 - fs/promises (Node.js only) for CLI operations
 
 ## Runtime Compatibility
