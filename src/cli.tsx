@@ -8,10 +8,12 @@ import { glob } from 'glob'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-interface GenerateOptions {
+interface CliGenerateOptions {
   type: string
   filepath?: string
   instructions?: string
+  maxTokens?: number
+  model?: string
 }
 
 const cli = meow(
@@ -105,7 +107,9 @@ export const App = () => {
                     type: cli.flags.type,
                     filepath: file,
                     instructions,
-                  } as GenerateOptions)
+                    maxTokens: cli.flags.maxTokens,
+                    model: 'gpt-4o-mini'
+                  } as CliGenerateOptions)
                   setStatus((prev) => ({
                     ...prev,
                     completed: prev.completed + 1,
@@ -121,7 +125,9 @@ export const App = () => {
               type: cli.flags.type,
               filepath,
               instructions,
-            } as GenerateOptions)
+              maxTokens: cli.flags.maxTokens,
+              model: 'gpt-4o-mini'
+            } as CliGenerateOptions)
             setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
           }
         }
@@ -130,15 +136,14 @@ export const App = () => {
           setStatus((prev) => ({ ...prev, current: 'Processing...' }))
           await generateMDX({
             type: cli.flags.type,
-            maxTokens: cli.flags.maxTokens || 100,
-          })
+            maxTokens: cli.flags.maxTokens,
+            model: 'gpt-4o-mini'
+          } as CliGenerateOptions)
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
         } else if (firstArg === 'init') {
           setStatus((prev) => ({ ...prev, current: 'Processing...' }))
           // TODO: Implement init logic
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
-        } else if (!firstArg) {
-          setError('No command provided. Run mdxai --help for usage information.')
         } else {
           setError('Unknown command. Run mdxai --help for usage information.')
         }
