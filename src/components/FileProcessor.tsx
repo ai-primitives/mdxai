@@ -14,9 +14,9 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
       onComplete()
       return
     }
-    
+
     const timer = setTimeout(() => {
-      setCurrentFile(prev => prev + 1)
+      setCurrentFile((prev) => prev + 1)
     }, 1000)
 
     return () => clearTimeout(timer)
@@ -27,7 +27,7 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   }
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection='column'>
       <Box>
         <Text>Processing {files[currentFile]}</Text>
       </Box>

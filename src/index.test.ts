@@ -15,7 +15,7 @@ describe('generateMDX', () => {
 
   it('should stream and return MDX content', async () => {
     console.log('Starting stream content test...')
-    let result;
+    let result
     try {
       result = await generateMDX({
         type: 'https://schema.org/Article',
@@ -27,21 +27,19 @@ describe('generateMDX', () => {
       console.error('Error in generateMDX:', error)
       throw error
     }
-    
+
     console.log('Generate MDX completed, checking result structure...')
     const { text, stream, finishReason, usage } = result
 
     // Verify stream works with timeout and proper completion
     let streamedContent = ''
     const maxRetries = 3
-    
+
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
       try {
-        const streamTimeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Stream timeout')), 10000)
-        )
-        
+        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
+
         await Promise.race([
           (async () => {
             console.log('Starting stream reading...')
@@ -55,9 +53,9 @@ describe('generateMDX', () => {
               throw new Error('Stream content too short')
             }
           })(),
-          streamTimeout
+          streamTimeout,
         ])
-        
+
         // If we get here, streaming was successful
         break
       } catch (error) {
@@ -66,7 +64,7 @@ describe('generateMDX', () => {
           console.error('All stream attempts failed')
           throw error
         }
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise((resolve) => setTimeout(resolve, 2000))
       }
     }
 
@@ -84,7 +82,7 @@ describe('generateMDX', () => {
     expect(frontmatterContent).toMatch(/title:\s*.+/m)
     expect(frontmatterContent).toMatch(/description:\s*.+/m)
     expect(text).toMatch(/^#\s+\w+/m) // Has at least one heading
-    
+
     // Verify content structure with consistent assertions
     const mdxContent = text.split('---')
     expect(mdxContent.length).toBeGreaterThanOrEqual(3) // Has valid frontmatter section
@@ -123,45 +121,44 @@ describe('generateMDX', () => {
       filepath: testFilePath,
       components: ['Card'],
       model: 'gpt-4o-mini',
-      maxTokens: 100
+      maxTokens: 100,
     })
 
     // Verify stream works with timeout
     let streamedContent = ''
-    const streamTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Stream timeout')), 10000)
-    )
+    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
     console.log('Starting stream test with 10s timeout...')
-    
+
     try {
       console.log('Reading stream content...')
       await Promise.race([
         (async () => {
           for await (const chunk of stream) {
             streamedContent += chunk
-            process.stdout.write('.')  // Progress indicator
+            process.stdout.write('.') // Progress indicator
           }
           console.log('\nStream reading complete')
         })(),
-        streamTimeout
+        streamTimeout,
       ])
 
       // Wait for file system operations to complete
       console.log('Waiting for file write to complete...')
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 2000))
 
       // Verify file exists with retries
       console.log('Checking file existence...')
       let fileExists = false
       for (let i = 0; i < 5; i++) {
-        fileExists = await fs.access(testFilePath)
+        fileExists = await fs
+          .access(testFilePath)
           .then(() => true)
           .catch(() => false)
         if (fileExists) break
         console.log(`File not found, retry ${i + 1}/5...`)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
-      
+
       if (!fileExists) {
         throw new Error('File was not created after streaming and retries')
       }
@@ -180,12 +177,12 @@ describe('generateMDX', () => {
             break
           }
           console.log(`Empty content on attempt ${i + 1}, retrying...`)
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise((resolve) => setTimeout(resolve, 2000))
         } catch (error) {
           lastError = error
           console.log(`Read attempt ${i + 1} failed:`, error)
           if (i === maxRetries - 1) throw error
-          await new Promise(resolve => setTimeout(resolve, 2000))
+          await new Promise((resolve) => setTimeout(resolve, 2000))
         }
       }
 
@@ -197,7 +194,7 @@ describe('generateMDX', () => {
       console.log('Verifying content structure...')
       expect(fileContent).toBeTruthy()
       expect(fileContent.length).toBeGreaterThan(500) // Minimum content length for generated text
-      
+
       // Verify frontmatter structure
       const frontmatterMatch = fileContent.match(/^---[\s\S]*?---/)
       expect(frontmatterMatch).toBeTruthy()
@@ -205,10 +202,9 @@ describe('generateMDX', () => {
       expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/)
       expect(frontmatter).toMatch(/title:\s*.+/m)
       expect(frontmatter).toMatch(/description:\s*.+/m)
-      
+
       // Verify content has some form of heading (more flexible matching)
-      const hasHeading = fileContent.match(/(?:^|\n)#+\s+.+/m) || 
-                        fileContent.match(/<h[1-6]>.+<\/h[1-6]>/i)
+      const hasHeading = fileContent.match(/(?:^|\n)#+\s+.+/m) || fileContent.match(/<h[1-6]>.+<\/h[1-6]>/i)
       expect(hasHeading).toBeTruthy()
       console.log('Found heading:', hasHeading?.[0])
 
@@ -219,7 +215,6 @@ describe('generateMDX', () => {
       console.log('Verifying streamed content...')
       expect(streamedContent.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 token limit
       expect(streamedContent).toMatch(/^---[\s\S]*?---/)
-
     } catch (error) {
       console.error('Test failed:', error)
       throw error
@@ -239,13 +234,13 @@ describe('generateMDX', () => {
       topic: 'Component Integration',
       components: ['Button', 'Card', 'Alert'],
       model: 'gpt-4o-mini',
-      maxTokens: 100
+      maxTokens: 100,
     })
 
     // More flexible component verification
     expect(text).toBeTruthy()
     expect(text.length).toBeGreaterThan(500) // Minimum content length requirement
-    
+
     // Check for component-like patterns rather than exact matches
     const hasComponentPattern = text.match(/<[A-Z][a-zA-Z]*(\s|>|\/)/g)
     expect(hasComponentPattern).toBeTruthy()
@@ -258,7 +253,7 @@ describe('generateMDX', () => {
       topic: 'Multiple Versions',
       count: 2,
       model: 'gpt-4o-mini',
-      maxTokens: 100
+      maxTokens: 100,
     })
 
     // Should have multiple article sections
@@ -278,7 +273,7 @@ describe('generateMDX', () => {
         topic: 'Error Handling',
         filepath: invalidPath,
         model: 'gpt-4o-mini',
-        maxTokens: 100
+        maxTokens: 100,
       })
       // If we get here, the test should fail
       expect('should have thrown').toBe(false)
@@ -300,7 +295,7 @@ describe('generateMDX', () => {
       type: 'https://schema.org/Article',
       content: inputContent,
       model: 'gpt-4o-mini',
-      maxTokens: 100
+      maxTokens: 100,
     })
 
     // Should reference or incorporate the input content

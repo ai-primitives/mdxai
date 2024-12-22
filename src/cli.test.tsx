@@ -17,26 +17,19 @@ const waitForStatus = async (lastFrame: () => string | undefined, statusPattern:
   const start = Date.now()
   let lastStatus = ''
   let progressDots = 0
-  
+
   // Define valid CLI states based on actual implementation
-  const validStates = [
-    'Initializing...',
-    'Processing...',
-    'Processing multiple files...',
-    'Generation complete!',
-    'No command provided',
-    'Unknown command',
-  ]
-  
+  const validStates = ['Initializing...', 'Processing...', 'Processing multiple files...', 'Generation complete!', 'No command provided', 'Unknown command']
+
   while (Date.now() - start < timeout) {
     const frame = lastFrame()
     if (frame && frame !== lastStatus) {
       console.log(`\nStatus update (${Math.floor((Date.now() - start) / 1000)}s): ${frame}`)
       lastStatus = frame
-      
+
       // Check if frame contains any valid state
-      const hasValidState = validStates.some(state => frame.includes(state))
-      
+      const hasValidState = validStates.some((state) => frame.includes(state))
+
       // Match either the specific pattern or any valid state
       if (statusPattern.test(frame) || hasValidState) {
         console.log('✓ Found matching status:', frame)
@@ -47,7 +40,7 @@ const waitForStatus = async (lastFrame: () => string | undefined, statusPattern:
       process.stdout.write('.')
       if (++progressDots % 60 === 0) process.stdout.write('\n')
     }
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
   }
   console.error(`\n❌ Timeout after ${timeout}ms waiting for status matching ${statusPattern}`)
   console.error(`Last status: ${lastStatus}`)
@@ -84,10 +77,10 @@ describe('CLI', () => {
       // Wait for processing to complete with better timeout handling
       await waitForStatus(lastFrame, /(Processing|Initializing)/, 10000)
       await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
-      
+
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
-      
+
       // More flexible assertions for non-deterministic responses
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
       expect(frame).toContain(filepath)
@@ -109,30 +102,30 @@ describe('CLI', () => {
       // Wait for processing to start
       console.log('Waiting for processing to start...')
       await waitForStatus(lastFrame, /Processing/, 30000)
-      
+
       // Wait for generation with progress logging
       console.log('Processing started, waiting for generation to complete...')
       let startTime = Date.now()
       let lastLogTime = startTime
-      
+
       while (Date.now() - startTime < 10000) {
         const frame = lastFrame()
-        
+
         // Log progress every 10 seconds
         if (Date.now() - lastLogTime > 10000) {
           console.log(`Current status (${Math.floor((Date.now() - startTime) / 1000)}s):`, frame)
           lastLogTime = Date.now()
         }
-        
+
         if (frame && /(Generation complete|Completed|Done)/.test(frame)) {
           console.log('Generation completed successfully')
           expect(frame).toContain(filepath)
           return
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
-      
+
       throw new Error('Generation did not complete within timeout')
     } catch (error) {
       console.error('Test failed:', error)
@@ -151,7 +144,7 @@ describe('CLI', () => {
 
     // Wait for processing to start
     await waitForStatus(lastFrame, /Processing/)
-    
+
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
     // Verify we're showing a status message about multiple files
@@ -198,7 +191,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     expect(generatedText?.length).toBeGreaterThan(500) // Minimum content length for generated text
     expect(generatedText).toMatch(/^---[\s\S]*?---/) // Has frontmatter
     expect(generatedText).toMatch(/\n[#\s]/) // Has at least one heading or section
-    
+
     // Verify frontmatter structure
     const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
     expect(frontmatterMatch).toBeTruthy()
@@ -206,7 +199,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Has schema type
     expect(frontmatter).toMatch(/title:\s*.+/m) // Has title
     expect(frontmatter).toMatch(/description:\s*.+/m) // Has description
-    
+
     // Verify content structure
     const content = generatedText.toString().split(/---\s*\n/)[2] || ''
     expect(content).toMatch(/^#\s+\w+/m) // Has a heading
@@ -228,12 +221,11 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // Wait for processing to start
     console.log('Waiting for processing to start...')
     await waitForStatus(lastFrame, /Processing/, 10000)
-    
-    
+
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
     await waitForStatus(lastFrame, /Generation complete/, 10000)
-    
+
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
     expect(frame).toContain('Generation complete!')
@@ -249,7 +241,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // Wait for processing to complete
     console.log('Waiting for processing to complete...')
     await waitForStatus(lastFrame, /Processing/, 10000)
-    
+
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
     expect(frame).toContain('Processing')
@@ -285,7 +277,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     await waitForStatus(lastFrame, /Processing/, 10000)
     console.log('Waiting for generation to complete...')
     await waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 10000)
-    
+
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
     expect(frame).toMatch(/(Generation complete|Completed|Done)/)
@@ -325,7 +317,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
     expect(generatedText.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 token limit
-    
+
     // Verify frontmatter structure
     const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
     expect(frontmatterMatch).toBeTruthy()
@@ -333,7 +325,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     expect(frontmatter).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Has schema type
     expect(frontmatter).toMatch(/title:\s*.+/m) // Has title
     expect(frontmatter).toMatch(/description:\s*.+/m) // Has description
-    
+
     // Verify content structure and quality
     const content = generatedText.toString().split(/---\s*\n/)[2] || ''
     expect(content).toMatch(/^#\s+\w+/m) // Has a heading
@@ -349,4 +341,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})                                                                                                                                  
+})

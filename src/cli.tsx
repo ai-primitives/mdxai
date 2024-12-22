@@ -49,12 +49,12 @@ const cli = meow(
       },
       maxTokens: {
         type: 'number',
-        default: 100,
-        shortFlag: 'max-tokens'
+        default: 500,
+        shortFlag: 'max-tokens',
       },
       model: {
         type: 'string',
-        default: 'gpt-4o-mini'
+        default: 'gpt-4o-mini',
       },
     },
   },
@@ -113,7 +113,7 @@ export const App = () => {
                     filepath: file,
                     instructions,
                     maxTokens: cli.flags.maxTokens,
-                    model: 'gpt-4o-mini'
+                    model: 'gpt-4o-mini',
                   } as CliGenerateOptions)
                   setStatus((prev) => ({
                     ...prev,
@@ -131,22 +131,22 @@ export const App = () => {
               filepath,
               instructions,
               maxTokens: cli.flags.maxTokens,
-              model: 'gpt-4o-mini'
+              model: 'gpt-4o-mini',
             } as CliGenerateOptions)
             setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
           }
         }
         // Handle command-based usage
         else if (firstArg === 'generate') {
-          setStatus((prev) => ({ ...prev, current: 'Processing...' }))
+          setStatus((prev) => ({ ...prev, current: 'Processing' }))
           await generateMDX({
             type: cli.flags.type,
             maxTokens: cli.flags.maxTokens,
-            model: 'gpt-4o-mini'
+            model: 'gpt-4o-mini',
           } as CliGenerateOptions)
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
         } else if (firstArg === 'init') {
-          setStatus((prev) => ({ ...prev, current: 'Processing...' }))
+          setStatus((prev) => ({ ...prev, current: 'Processing' }))
           // TODO: Implement init logic
           setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
         } else {

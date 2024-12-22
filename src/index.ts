@@ -23,7 +23,7 @@ export interface GenerateOptions {
 }
 
 export async function generateMDX(options: GenerateOptions) {
-  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 100, model: customModel } = options
+  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 500, model: customModel } = options
 
   // Use custom model if provided, otherwise use default
   const model = customModel ? openai(customModel) : defaultModel
@@ -47,14 +47,20 @@ The frontmatter MUST:
 4. Use proper YAML indentation
 5. Not use quotes around the schema type value
 
-Keep content concise (around 100 tokens).`
+Generate comprehensive content with:
+1. Multiple sections (at least 2) using proper headings (# for main title, ## for sections)
+2. React components where appropriate (e.g., <Alert>, <Button>, etc.)
+3. References to any provided input content
+4. Around 500 tokens total length.`
 
   // Construct the user prompt
   const prompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${
     topic ? ` about ${topic}` : ''
-  }${inputContent ? ` based on this content:\n\n${inputContent}` : ''}.
+  }${inputContent ? ` incorporating this existing content:\n\n${inputContent}` : ''}.
 Include appropriate frontmatter with schema.org metadata, including either $type or @type field without quotes.
-Ensure the frontmatter is properly indented YAML.`
+Ensure the frontmatter is properly indented YAML.
+Create at least 2 main sections with proper headings.
+${components.length > 0 ? `Incorporate these components naturally in the content: ${components.join(', ')}` : ''}`
 
   try {
     // Use streamText to generate content
@@ -70,9 +76,7 @@ Ensure the frontmatter is properly indented YAML.`
     let content = ''
 
     // Stream and accumulate content with timeout
-    const streamTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Stream timeout')), 10000)
-    )
+    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
 
     try {
       await Promise.race([
@@ -81,7 +85,7 @@ Ensure the frontmatter is properly indented YAML.`
             content += chunk
           }
         })(),
-        streamTimeout
+        streamTimeout,
       ])
     } catch (error) {
       if (error instanceof Error && error.message === 'Stream timeout') {
