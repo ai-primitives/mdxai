@@ -18,14 +18,6 @@ interface StreamTextResult {
   usage: Promise<{ totalTokens: number }>
 }
 
-// Test configuration
-// Type definitions for test responses
-interface StreamTextResult {
-  text: Promise<string>
-  finishReason: Promise<string>
-  usage: Promise<{ totalTokens: number }>
-}
-
 // Helper function to wait for specific status with better timeout handling
 const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = TEST_TIMEOUT) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
@@ -122,13 +114,13 @@ describe('CLI', () => {
 
       // Verify the frame content
       expect(frame).toMatch(/(Generation complete|Completed|Processing)/)
-      
+
       // Verify the generated content
       const result: StreamTextResult = await streamText({
         model: defaultModel,
         maxTokens: MAX_TOKENS,
         system: 'Generate MDX content with proper frontmatter',
-        prompt: instructions
+        prompt: instructions,
       })
 
       const generatedText = await result.text
@@ -259,11 +251,11 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing to start
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, TEST_TIMEOUT)
 
     // Wait for generation to complete
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    await waitForStatus(lastFrame, /Generation complete/, TEST_TIMEOUT)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -302,7 +294,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     try {
       await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, TEST_TIMEOUT)
-      
+
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
 
@@ -315,7 +307,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
         model: defaultModel,
         maxTokens: MAX_TOKENS,
         system: 'Generate MDX content with proper frontmatter',
-        prompt: testContent
+        prompt: testContent,
       })
 
       const generatedText: string = await result.text
@@ -348,9 +340,9 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     // Wait for processing and generation with better timeout handling
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 10000)
+    await waitForStatus(lastFrame, /Processing/, TEST_TIMEOUT)
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 10000)
+    await waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, TEST_TIMEOUT)
 
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -359,14 +351,21 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
   it('generates MDX content using AI SDK', async () => {
     process.argv = [
-  'node', 'mdxai', 'generate',
-  '--type=https://schema.org/Article',
-  '--model', 'gpt-4o-mini',
-  '--max-tokens', '100',
-  '--temperature', '0.3',
-  '--frequency-penalty', '0.0',
-  '--presence-penalty', '0.0'
-]
+      'node',
+      'mdxai',
+      'generate',
+      '--type=https://schema.org/Article',
+      '--model',
+      'gpt-4o-mini',
+      '--max-tokens',
+      '100',
+      '--temperature',
+      '0.3',
+      '--frequency-penalty',
+      '0.0',
+      '--presence-penalty',
+      '0.0',
+    ]
 
     const { lastFrame } = render(<App />)
     console.log('Starting AI SDK test...')
@@ -440,4 +439,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                                                                                   
+})   

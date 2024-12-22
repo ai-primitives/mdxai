@@ -32,7 +32,9 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   // Simplified UI without Spinner
   return (
     <Box flexDirection='column'>
-      <Text>Processing file {currentFile + 1} of {files.length}</Text>
+      <Text>
+        Processing file {currentFile + 1} of {files.length}
+      </Text>
     </Box>
   )
 }

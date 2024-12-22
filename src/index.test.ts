@@ -218,24 +218,25 @@ describe('generateMDX', () => {
 
       // Enhanced component pattern matching with better logging
       const componentPatterns = [
-        /<[A-Z][A-Za-z]*[^>]*>/,  // Match any capitalized component
-        /<(Button|Card|Alert)[^>]*>/i,  // Match specific components
-        /[{<][A-Z][A-Za-z]*\s+[^>]*>/,  // Match component with props
-        /<[A-Z][A-Za-z]*\s*\/>/,  // Match self-closing components
-        /<[A-Z][A-Za-z]*>[^<]*<\/[A-Z][A-Za-z]*>/  // Match components with content
+        /<[A-Z][A-Za-z]*[^>]*>/, // Match any capitalized component
+        /<(Button|Card|Alert)[^>]*>/i, // Match specific components
+        /[{<][A-Z][A-Za-z]*\s+[^>]*>/, // Match component with props
+        /<[A-Z][A-Za-z]*\s*\/>/, // Match self-closing components
+        /<[A-Z][A-Za-z]*>[^<]*<\/[A-Z][A-Za-z]*>/, // Match components with content
       ]
-      
+
       // More flexible component validation with detailed logging
       const contentLines = fileContent.split('\n')
-      const componentsFound = contentLines.filter(line =>
-        componentPatterns.some(pattern => pattern.test(line))
-      )
+      const componentsFound = contentLines.filter((line) => componentPatterns.some((pattern) => pattern.test(line)))
       console.log('Found components:', componentsFound)
-      
+
       // Verify at least one component exists with better error message
       if (componentsFound.length === 0) {
         console.log('Content lines:', contentLines)
-        console.log('Component patterns:', componentPatterns.map(p => p.toString()))
+        console.log(
+          'Component patterns:',
+          componentPatterns.map((p) => p.toString()),
+        )
       }
       expect(componentsFound.length).toBeGreaterThan(0)
 
@@ -283,17 +284,17 @@ describe('generateMDX', () => {
       /<Button[^>]*>/i,
       /<Card[^>]*>/i,
       /<Alert[^>]*>/i,
-      /<[A-Z][a-zA-Z]*(\s|>|\/)/i  // Generic component pattern, case insensitive
+      /<[A-Z][a-zA-Z]*(\s|>|\/)/i, // Generic component pattern, case insensitive
     ]
-    
+
     // More flexible component validation
     const contentLines = text.split('\n')
-    const hasComponent = contentLines.some(line => 
-      componentPatterns.some(pattern => pattern.test(line))
-    )
+    const hasComponent = contentLines.some((line) => componentPatterns.some((pattern) => pattern.test(line)))
     expect(hasComponent).toBeTruthy()
-    console.log('Content lines with potential components:', 
-      contentLines.filter(line => componentPatterns.some(pattern => pattern.test(line))))
+    console.log(
+      'Content lines with potential components:',
+      contentLines.filter((line) => componentPatterns.some((pattern) => pattern.test(line))),
+    )
   })
 
   it('should generate multiple versions when count > 1', async () => {
@@ -319,12 +320,12 @@ describe('generateMDX', () => {
       // Check each section for proper structure
       const contentSections = sections.slice(2) // Skip first empty section and first frontmatter
       console.log(`Found ${contentSections.length} content sections`)
-      
+
       for (const section of contentSections) {
         // Log section details for debugging
         console.log('Section length:', section.length)
         console.log('Section preview:', section.slice(0, 100))
-        
+
         // Verify section has basic content requirements
         expect(section.length).toBeGreaterThan(50) // Each section should have meaningful content
         expect(section).toMatch(/^#{1,2}\s+\w+/m) // Should have a heading (# or ##)
