@@ -4,12 +4,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { App } from './cli.js'
 import { streamText } from 'ai'
 import path from 'path'
-import { defaultModel } from './utils/openai.js'
 import type * as ReactTypes from 'react'
+import type { LanguageModelV1 } from '@ai-sdk/provider'
+import { defaultModel } from './utils/openai.js'
 
 // Test configuration
-const TEST_TIMEOUT = 10000 // 10 second timeout for all tests
+const TEST_TIMEOUT = 10000 // 10 second timeout for faster test execution
 const MAX_TOKENS = 100 // Token limit for faster test execution
+const MODEL: LanguageModelV1 = defaultModel // Use gpt-4o-mini model configuration
 
 // Type definitions for AI responses
 interface StreamTextResult {
@@ -117,7 +119,7 @@ describe('CLI', () => {
 
       // Verify the generated content
       const result: StreamTextResult = await streamText({
-        model: defaultModel,
+        model: MODEL,
         maxTokens: MAX_TOKENS,
         system: 'Generate MDX content with proper frontmatter',
         prompt: instructions,
@@ -304,7 +306,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
       // Verify generated content
       const testContent = content // Store content in a new variable to fix block-scoping
       const result: StreamTextResult = await streamText({
-        model: defaultModel,
+        model: MODEL,
         maxTokens: MAX_TOKENS,
         system: 'Generate MDX content with proper frontmatter',
         prompt: testContent,
@@ -372,7 +374,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
 
     try {
       const result: StreamTextResult = await streamText({
-        model: defaultModel,
+        model: MODEL,
         system: `You are an expert MDX content generator. Generate content that:
 1. MUST start with proper frontmatter (--- on its own line)
 2. MUST include $type: https://schema.org/Article (no quotes)
@@ -439,4 +441,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})   
+})               

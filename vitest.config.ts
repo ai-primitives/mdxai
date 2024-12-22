@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    testTimeout: 10000, // 10 second timeout for all tests
+    testTimeout: 10000, // 10 second timeout for faster test execution
     hookTimeout: 10000,
     teardownTimeout: 10000,
     maxConcurrency: 20, // Run up to 20 tests in parallel
