@@ -4,23 +4,23 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    testTimeout: 10000, // 10 second timeout for AI-dependent tests
-    hookTimeout: 10000, // Keep hook timeout at 10s
-    teardownTimeout: 10000, // Keep teardown timeout at 10s
-    maxConcurrency: 20, // Maximum concurrent tests
+    testTimeout: 10000, // 10 second timeout for all tests
+    hookTimeout: 10000,
+    teardownTimeout: 10000,
+    maxConcurrency: 20, // Run up to 20 tests in parallel
     pool: 'threads',
     poolOptions: {
       threads: {
         singleThread: false,
-        maxThreads: 20, // Use all available threads
-        isolate: true // Ensure proper test isolation
+        maxThreads: 20, // Maximum thread count
+        isolate: true // Ensure test isolation
       }
     },
     setupFiles: ['dotenv/config'],
-    fileParallelism: true,
-    retry: 2, // Retry failed tests up to 2 times
+    fileParallelism: true, // Enable parallel file execution
+    retry: 2, // Retry failed tests
     sequence: {
-      shuffle: true // Randomize test order to catch ordering issues
+      shuffle: true // Randomize test order
     }
   }
 })

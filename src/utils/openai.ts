@@ -12,6 +12,5 @@ export const openAIClient = createOpenAICompatible({
 
 // Default model configuration with consistent settings
 export const defaultModel: LanguageModelV1 = openAIClient('gpt-4o-mini', {
-  maxTokens: 100, // Enforce token limit for faster test execution
-  temperature: 0.7 // Consistent temperature for reliable outputs
+  simulateStreaming: false // Ensure native streaming for better performance
 })
