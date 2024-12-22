@@ -9,7 +9,7 @@ import { openAIClient } from './utils/openai.js'
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 30000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -51,7 +51,7 @@ vi.mock('react', async () => {
 })
 
 describe('CLI', () => {
-  vi.setConfig({ testTimeout: 30000 }) // Set timeout for all tests in this suite
+  vi.setConfig({ testTimeout: 10000 }) // Set consistent 10s timeout for all tests
   beforeEach(() => {
     // Clear process.argv and reset mocks before each test
     process.argv = ['node', 'mdxai']
@@ -268,7 +268,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     try {
       // Wait for generation to complete with better timeout handling
       console.log('Waiting for generation to complete...')
-      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 30000)
+      await waitForStatus(lastFrame, /(Generation complete|Completed|Processing)/, 10000)
       
       const frame = lastFrame()
       if (!frame) throw new Error('No frame rendered')
@@ -299,8 +299,16 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
   })
 
   it('generates MDX content using AI SDK', async () => {
-    vi.setConfig({ testTimeout: 30000 }) // Ensure proper timeout for AI SDK test
-    process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article', '--model', 'gpt-4o-mini', '--max-tokens', '100']
+    // Using global 10s timeout from test suite configuration
+    process.argv = [
+  'node', 'mdxai', 'generate',
+  '--type=https://schema.org/Article',
+  '--model', 'gpt-4o-mini',
+  '--max-tokens', '100',
+  '--temperature', '0.3',
+  '--frequency-penalty', '0.0',
+  '--presence-penalty', '0.0'
+]
 
     const { lastFrame } = render(<App />)
     console.log('Starting AI SDK test...')
@@ -374,4 +382,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                                                                                                                                                               
+})                                                                                                                                                                        
