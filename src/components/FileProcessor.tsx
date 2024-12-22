@@ -29,7 +29,7 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   return (
     <Box flexDirection='column'>
       <Box>
-        <Text>Processing {files[currentFile]}</Text>
+        <Text>Processing</Text>
       </Box>
       <Text>
         Progress: {currentFile + 1}/{files.length}

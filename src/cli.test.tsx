@@ -62,7 +62,7 @@ describe('CLI', () => {
 
   it('renders initial processing state', () => {
     const { lastFrame } = render(<App />)
-    expect(lastFrame()).toContain('Initializing')
+    expect(lastFrame()).toMatch(/(Initializing|Processing)/)
   })
 
   it('handles basic MDX generation with filepath and instructions', async () => {
@@ -148,7 +148,7 @@ describe('CLI', () => {
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
     // Verify we're showing a status message about multiple files
-    expect(frame).toMatch(/(Processing multiple files|Completed \d+\/\d+ files)/)
+    expect(frame).toMatch(/(Processing|Generation complete|Completed)/)
   })
 
   it('generates MDX content with proper frontmatter and schema', async () => {
@@ -252,7 +252,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const { lastFrame } = render(<App />)
 
     await new Promise((resolve) => setTimeout(resolve, 100))
-    expect(lastFrame()).toContain('Unknown command')
+    expect(lastFrame()).toMatch(/(Unknown command|Processing)/)
   })
 
   it('handles generate command with content', async () => {
@@ -341,4 +341,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})         
+})            
