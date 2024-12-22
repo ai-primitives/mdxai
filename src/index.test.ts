@@ -74,7 +74,7 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(20) // Minimum content length for small token limit
+    expect(text?.length).toBeGreaterThan(500) // Minimum content length requirement
     expect(finishReason).toBe('stop')
     expect(usage).toHaveProperty('totalTokens')
     expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
@@ -100,7 +100,7 @@ describe('generateMDX', () => {
     // Verify streamed content matches structure
     expect(streamedContent).toMatch(/^---\n/) // Should start with frontmatter
     expect(streamedContent).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/) // Should have schema type
-    expect(streamedContent.length).toBeGreaterThan(100) // Ensure some content with reduced tokens
+    expect(streamedContent.length).toBeGreaterThan(500) // Minimum content length requirement
   })
 
   it('should stream to file and stdout', async () => {
@@ -192,7 +192,7 @@ describe('generateMDX', () => {
       // Verify content structure and quality
       console.log('Verifying content structure...')
       expect(fileContent).toBeTruthy()
-      expect(fileContent.length).toBeGreaterThan(100) // Reduced expectation for smaller token limit
+      expect(fileContent.length).toBeGreaterThan(500) // Minimum content length requirement
       
       // Verify frontmatter structure
       const frontmatterMatch = fileContent.match(/^---[\s\S]*?---/)
@@ -239,7 +239,7 @@ describe('generateMDX', () => {
 
     // More flexible component verification
     expect(text).toBeTruthy()
-    expect(text.length).toBeGreaterThan(20) // Further reduced expectation for parallel execution
+    expect(text.length).toBeGreaterThan(500) // Minimum content length requirement
     
     // Check for component-like patterns rather than exact matches
     const hasComponentPattern = text.match(/<[A-Z][a-zA-Z]*(\s|>|\/)/g)

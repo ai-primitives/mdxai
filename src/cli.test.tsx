@@ -328,7 +328,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const content = generatedText.toString().split(/---\s*\n/)[2] || ''
     expect(content).toMatch(/^#\s+\w+/m) // Has a heading
     expect(content.split('\n').length).toBeGreaterThan(10) // Has multiple paragraphs
-    expect(content.length).toBeGreaterThan(50) // Has reasonable body content for reduced token limit
+    expect(content.length).toBeGreaterThan(500) // Minimum content length requirement
 
     // Verify the generation completed successfully
     expect(finishReason).toBe('length') // Using length since we're limiting tokens
@@ -339,4 +339,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})                                                                                                                
+})                                                                                                                   

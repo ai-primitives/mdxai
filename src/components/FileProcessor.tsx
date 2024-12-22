@@ -1,6 +1,13 @@
 import React, { useState, type FC } from 'react'
 import { Box, Text } from 'ink'
-import { default as Spinner } from 'ink-spinner'
+import { default as SpinnerIcon } from 'ink-spinner'
+
+type SpinnerName = 'dots' | 'dots2' | 'dots3' | 'dots4' | 'dots5' | 'dots6' | 'dots7' | 'dots8' | 'dots9' | 'dots10' | 'dots11' | 'dots12'
+
+// Create a properly typed Spinner component
+const Spinner: FC<{ type?: SpinnerName }> = ({ type = 'dots' }) => {
+  return SpinnerIcon({ type }) as any
+}
 
 interface FileProcessorProps {
   files: string[]
@@ -30,7 +37,7 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   return (
     <Box flexDirection="column">
       <Box>
-        <Spinner /> <Text>Processing {files[currentFile]}</Text>
+        <Spinner type="dots" /> <Text>Processing {files[currentFile]}</Text>
       </Box>
       <Text>
         Progress: {currentFile + 1}/{files.length}
