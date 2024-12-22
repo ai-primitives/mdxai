@@ -10,66 +10,104 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 describe('generateMDX', () => {
   vi.setConfig({ testTimeout: 30000 })
 
-  it(
-    'should generate MDX content with basic options',
-    async () => {
-      const result = await generateMDX({
-        type: 'article',
-        topic: 'React Hooks',
-      })
+  it('should stream and return MDX content', async () => {
+    const { text, stream, finishReason, usage } = await generateMDX({
+      type: 'https://schema.org/Article',
+      topic: 'AI Testing',
+      components: ['Button']
+    })
 
-      expect(result).toContain('# ') // Should contain headings
-      expect(result).toContain('```') // Should contain code blocks
-    },
-    { timeout: 30000 },
-  )
+    // Verify stream works
+    let streamedContent = ''
+    for await (const chunk of stream) {
+      streamedContent += chunk
+    }
 
-  it(
-    'should generate MDX and write to file',
-    async () => {
-      const testFilePath = path.join(__dirname, 'test.mdx')
+    // Verify response structure
+    expect(text).toBeTruthy()
+    expect(text).toBe(streamedContent)
+    expect(finishReason).toBe('stop')
+    expect(usage).toHaveProperty('totalTokens')
+    
+    // Verify content structure
+    expect(text).toMatch(/^---/) // Should have frontmatter
+    expect(text).toMatch(/\$type: https:\/\/schema\.org\/Article/) // Should have schema type
+    expect(text).toMatch(/---\s*\n/) // Should end frontmatter
+    expect(text).toMatch(/^#\s+\w+/m) // Should have a heading
+  })
 
-      const result = await generateMDX({
-        type: 'tutorial',
-        topic: 'TypeScript Basics',
-        filepath: testFilePath,
-      })
-
-      // Verify file was written
-      const fileContent = await fs.readFile(testFilePath, 'utf-8')
-      expect(fileContent).toBe(result)
-
-      // Cleanup
+  it('should stream to file and stdout', async () => {
+    const testFilePath = path.join(__dirname, 'test-output.mdx')
+    
+    // Clean up any existing test file
+    try {
       await fs.unlink(testFilePath)
-    },
-    { timeout: 30000 },
-  )
+    } catch (e) {
+      // File might not exist, that's ok
+    }
 
-  it(
-    'should incorporate specified components',
-    async () => {
-      const result = await generateMDX({
-        type: 'documentation',
-        topic: 'API Reference',
-        components: ['CodeBlock', 'Alert', 'Table'],
-      })
+    const { text, stream } = await generateMDX({
+      type: 'https://schema.org/Article',
+      topic: 'File Streaming Test',
+      filepath: testFilePath,
+      components: ['Card']
+    })
 
-      // Check if components are used in the generated MDX
-      expect(result).toMatch(/<(CodeBlock|Alert|Table)/)
-    },
-    { timeout: 30000 },
-  )
+    // Verify file was written and matches the returned content
+    const fileContent = await fs.readFile(testFilePath, 'utf-8')
+    expect(fileContent).toBe(text)
+    
+    // Verify content includes components
+    expect(text).toMatch(/<Card/)
 
-  it(
-    'should handle errors gracefully',
-    async () => {
-      await expect(
-        generateMDX({
-          type: 'invalid-type',
-          topic: '',
-        }),
-      ).rejects.toThrow()
-    },
-    { timeout: 30000 },
-  )
+    // Clean up
+    await fs.unlink(testFilePath)
+  })
+
+  it('should handle multiple components', async () => {
+    const { text } = await generateMDX({
+      type: 'https://schema.org/Article',
+      topic: 'Component Integration',
+      components: ['Button', 'Card', 'Alert']
+    })
+
+    // Verify at least one component was used
+    const componentUsed = ['Button', 'Card', 'Alert'].some(
+      component => text.includes(`<${component}`)
+    )
+    expect(componentUsed).toBe(true)
+  })
+
+  it('should generate multiple versions when count > 1', async () => {
+    const { text } = await generateMDX({
+      type: 'https://schema.org/Article',
+      topic: 'Multiple Versions',
+      count: 2
+    })
+
+    // Should have multiple article sections
+    const articleCount = (text.match(/^#\s+/gm) || []).length
+    expect(articleCount).toBeGreaterThanOrEqual(2)
+  })
+
+  it('should handle file writing errors', async () => {
+    const invalidPath = path.join(__dirname, 'nonexistent', 'invalid', 'test.mdx')
+
+    await expect(generateMDX({
+      type: 'https://schema.org/Article',
+      topic: 'Error Handling',
+      filepath: invalidPath
+    })).rejects.toThrow()
+  })
+
+  it('should incorporate input content', async () => {
+    const inputContent = '# Existing Content\nThis is some existing content.'
+    const { text } = await generateMDX({
+      type: 'https://schema.org/Article',
+      content: inputContent
+    })
+
+    // Should reference or incorporate the input content
+    expect(text).toMatch(/Existing Content/i)
+  })
 })
