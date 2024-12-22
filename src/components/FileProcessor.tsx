@@ -6,6 +6,7 @@ interface FileProcessorProps {
   onComplete: () => void
 }
 
+// Simplified version without Spinner for core functionality
 const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
   const [currentFile, setCurrentFile] = useState(0)
 
@@ -26,14 +27,10 @@ const FileProcessor: FC<FileProcessorProps> = ({ files, onComplete }) => {
     return null
   }
 
+  // Simplified UI without Spinner
   return (
     <Box flexDirection='column'>
-      <Box>
-        <Text>Processing</Text>
-      </Box>
-      <Text>
-        Progress: {currentFile + 1}/{files.length}
-      </Text>
+      <Text>Processing file {currentFile + 1} of {files.length}</Text>
     </Box>
   )
 }
