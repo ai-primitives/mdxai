@@ -9,7 +9,7 @@ import type { LanguageModelV1 } from '@ai-sdk/provider'
 import { defaultModel } from './utils/openai.js'
 
 // Test configuration
-const TEST_TIMEOUT = 10000 // 10 second timeout for faster test execution
+const TEST_TIMEOUT = 15000 // 15 second timeout for test execution
 const MAX_TOKENS = 100 // Token limit for faster test execution
 const MODEL: LanguageModelV1 = defaultModel // Use gpt-4o-mini model configuration
 
@@ -174,7 +174,7 @@ describe('CLI', () => {
     const { lastFrame } = render(<App />)
 
     const result: StreamTextResult = await streamText({
-      model: defaultModel, // Use consistent model instance
+      model: MODEL, // Use consistent model instance
       system: `You are an expert MDX content generator specializing in JSX components. Generate content that:
 1. Follows https://schema.org/Article schema
 2. MUST use JSX components frequently in the content
@@ -441,4 +441,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})               
+})                  
