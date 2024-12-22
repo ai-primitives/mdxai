@@ -1,4 +1,5 @@
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import type { LanguageModelV1 } from '@ai-sdk/provider'
 
 // Configure OpenAI client with gateway support
 export const openAIClient = createOpenAICompatible({
@@ -10,4 +11,4 @@ export const openAIClient = createOpenAICompatible({
 })
 
 // Default model configuration
-export const defaultModel = openAIClient('gpt-4o-mini')
+export const defaultModel: LanguageModelV1 = openAIClient('gpt-4o-mini')
