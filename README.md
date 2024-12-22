@@ -58,7 +58,6 @@ The CLI provides real-time feedback and zero-config operation:
 - Shows file processing progress with concurrent operations
 - Creates .generated.mdx files alongside originals
 
-
 ### YAML-LD Frontmatter
 
 MDX files can include MDX-LD/YAML-LD frontmatter:
@@ -71,12 +70,10 @@ $type: https://schema.org/Article
 title: My Example Article
 description: An example article
 ---
-
 # My Example Article
 
 This is an example article.
 ```
-
 
 ## SDK Usage
 

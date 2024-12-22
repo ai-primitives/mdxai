@@ -14,7 +14,8 @@ interface GenerateOptions {
   instructions?: string
 }
 
-const cli = meow(`
+const cli = meow(
+  `
     Usage
       $ mdxai <filepath> <instructions...>
       $ mdxai <command> [options]
@@ -32,19 +33,21 @@ const cli = meow(`
       $ mdxai blog/future-of-ai.mdx add more real-world examples from recent news
       $ mdxai content/**/* change the voice of the content to be more conversational
       $ mdxai generate ./content --type="https://schema.org/Article"
-`, {
-  importMeta: import.meta,
-  flags: {
-    type: {
-      type: 'string',
-      default: 'https://schema.org/Article'
+`,
+  {
+    importMeta: import.meta,
+    flags: {
+      type: {
+        type: 'string',
+        default: 'https://schema.org/Article',
+      },
+      concurrency: {
+        type: 'number',
+        default: 4,
+      },
     },
-    concurrency: {
-      type: 'number',
-      default: 4
-    }
-  }
-})
+  },
+)
 
 interface ProcessingStatus {
   total: number
@@ -68,12 +71,12 @@ export const App = () => {
           const filepath = firstArg
           // Join all remaining args as the instructions
           const instructions = remainingArgs.join(' ')
-          
+
           if (!instructions) {
             setError('Instructions are required when processing files')
             return
           }
-          
+
           if (filepath.includes('*')) {
             // Handle glob pattern
             const files = await glob(filepath, { absolute: false })
@@ -81,52 +84,54 @@ export const App = () => {
               setError(`No files found matching pattern: ${filepath}`)
               return
             }
-            
-            setStatus(prev => ({ ...prev, total: files.length, current: 'Processing multiple files...' }))
-            
+
+            setStatus((prev) => ({ ...prev, total: files.length, current: 'Processing multiple files...' }))
+
             // Process files concurrently with limit
             const chunks: string[][] = []
             for (let i = 0; i < files.length; i += cli.flags.concurrency) {
               chunks.push(files.slice(i, i + cli.flags.concurrency))
             }
-            
+
             for (const chunk of chunks) {
-              await Promise.all(chunk.map(async (file: string) => {
-                setStatus(prev => ({ ...prev, current: `Processing ${file}...` }))
-                await generateMDX({
-                  type: cli.flags.type,
-                  filepath: file,
-                  instructions
-                } as GenerateOptions)
-                setStatus(prev => ({ 
-                  ...prev, 
-                  completed: prev.completed + 1,
-                  current: `Completed ${prev.completed + 1}/${prev.total} files`
-                }))
-              }))
+              await Promise.all(
+                chunk.map(async (file: string) => {
+                  setStatus((prev) => ({ ...prev, current: `Processing ${file}...` }))
+                  await generateMDX({
+                    type: cli.flags.type,
+                    filepath: file,
+                    instructions,
+                  } as GenerateOptions)
+                  setStatus((prev) => ({
+                    ...prev,
+                    completed: prev.completed + 1,
+                    current: `Completed ${prev.completed + 1}/${prev.total} files`,
+                  }))
+                }),
+              )
             }
           } else {
             // Handle single file
-            setStatus(prev => ({ ...prev, current: `Processing ${filepath}...` }))
+            setStatus((prev) => ({ ...prev, current: `Processing ${filepath}...` }))
             await generateMDX({
               type: cli.flags.type,
               filepath,
-              instructions
+              instructions,
             } as GenerateOptions)
-            setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+            setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
           }
         }
         // Handle command-based usage
         else if (firstArg === 'generate') {
-          setStatus(prev => ({ ...prev, current: 'Generating MDX content...' }))
+          setStatus((prev) => ({ ...prev, current: 'Generating MDX content...' }))
           await generateMDX({
-            type: cli.flags.type
+            type: cli.flags.type,
           })
-          setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
         } else if (firstArg === 'init') {
-          setStatus(prev => ({ ...prev, current: 'Initializing configuration...' }))
+          setStatus((prev) => ({ ...prev, current: 'Initializing configuration...' }))
           // TODO: Implement init logic
-          setStatus(prev => ({ ...prev, current: 'Initialization complete!' }))
+          setStatus((prev) => ({ ...prev, current: 'Initialization complete!' }))
         } else {
           setError('Unknown command. Run mdxai --help for usage information.')
         }
@@ -139,9 +144,9 @@ export const App = () => {
   }, [])
 
   return (
-    <Box flexDirection="column">
+    <Box flexDirection='column'>
       {error ? (
-        <Text color="red">{error}</Text>
+        <Text color='red'>{error}</Text>
       ) : (
         <Box>
           <Text>

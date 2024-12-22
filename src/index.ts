@@ -1,4 +1,4 @@
-import { parse, stringify, type MDXLD } from 'mdxld'
+import { parse, stringify } from 'mdxld'
 import { streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { writeFile, mkdir } from 'fs/promises'
@@ -13,19 +13,33 @@ export interface GenerateOptions {
   components?: string[]
   count?: number
   topic?: string
+  maxTokens?: number // Maximum tokens to generate (default: 100)
+  instructions?: string // Instructions for content generation
 }
 
 export async function generateMDX(options: GenerateOptions) {
-  const { type, filepath, content: inputContent, components = [], count = 1, topic } = options
-
+  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 100 } = options
 
   // Construct the system prompt
   const system = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
 ${components.length > 0 ? `Use these components where appropriate: ${components.join(', ')}` : ''}
 Important: Return ONLY the raw MDX content. Do not wrap it in code blocks or add any formatting.
-The frontmatter MUST include either a $type or @type field with the schema type (e.g. $type: https://schema.org/Article or @type: https://schema.org/Article).
-Do not use quotes around the schema type value.
-Format the frontmatter as valid YAML with proper indentation.`
+
+The content MUST start with YAML frontmatter between --- markers, like this:
+---
+$type: https://schema.org/Article
+title: Example Title
+description: Brief description
+---
+
+The frontmatter MUST:
+1. Start and end with --- on their own lines
+2. Include either $type or @type field with the schema type
+3. Include title and description fields
+4. Use proper YAML indentation
+5. Not use quotes around the schema type value
+
+Keep content concise (around 100 tokens).`
 
   // Construct the user prompt
   const prompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${
@@ -40,24 +54,42 @@ Ensure the frontmatter is properly indented YAML.`
       model,
       system,
       prompt,
-      // maxTokens: 2000, // Adjust as needed
+      maxTokens: maxTokens || 100,
+      temperature: 0.7,
     })
 
     // Create a buffer to accumulate the content
     let content = ''
 
-    // Stream and accumulate content
-    for await (const chunk of result.textStream) {
-      content += chunk
+    // Stream and accumulate content with timeout
+    const streamTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Stream timeout')), 45000)
+    )
+
+    try {
+      await Promise.race([
+        (async () => {
+          for await (const chunk of result.textStream) {
+            content += chunk
+          }
+        })(),
+        streamTimeout
+      ])
+    } catch (error) {
+      if (error instanceof Error && error.message === 'Stream timeout') {
+        console.warn('Stream timed out, using partial content')
+      } else {
+        throw error
+      }
     }
 
     // Clean up any code block wrapping and extra whitespace
     content = content
-      .replace(/^```mdx?\n/g, '')  // Remove opening code block
-      .replace(/\n```$/g, '')      // Remove closing code block
-      .replace(/^```\n/g, '')      // Remove any other code blocks
-      .replace(/\n```\n/g, '\n')   // Remove inline code blocks
-      .trim()                      // Remove extra whitespace
+      .replace(/^```mdx?\n/g, '') // Remove opening code block
+      .replace(/\n```$/g, '') // Remove closing code block
+      .replace(/^```\n/g, '') // Remove any other code blocks
+      .replace(/\n```\n/g, '\n') // Remove inline code blocks
+      .trim() // Remove extra whitespace
 
     try {
       // Parse the MDX content
@@ -83,12 +115,12 @@ Ensure the frontmatter is properly indented YAML.`
 
       // Convert back to string
       content = stringify(parsed)
-    } catch (parseError) {
+    } catch {
       // If parsing fails, try to fix common YAML issues
       const [frontmatter, ...rest] = content.split('---\n')
       const fixedFrontmatter = frontmatter
         .split('\n')
-        .map(line => {
+        .map((line) => {
           // Fix indentation and ensure proper YAML format
           if (line.trim().startsWith('$') || line.trim().startsWith('@')) {
             const [key, ...valueParts] = line.trim().split(':')
@@ -109,18 +141,16 @@ Ensure the frontmatter is properly indented YAML.`
     // If filepath is provided, ensure the directory exists and write to file
     if (filepath) {
       // Ensure the directory exists before attempting to write
-      await mkdir(dirname(filepath), { recursive: true })
-        .catch(error => {
-          console.error(`Error creating directory: ${error.message}`)
-          throw error
-        })
+      await mkdir(dirname(filepath), { recursive: true }).catch((error) => {
+        console.error(`Error creating directory: ${error.message}`)
+        throw error
+      })
 
       // Write the complete content to file
-      await writeFile(filepath, content, 'utf-8')
-        .catch(error => {
-          console.error(`Error writing to file: ${error.message}`)
-          throw error
-        })
+      await writeFile(filepath, content, 'utf-8').catch((error) => {
+        console.error(`Error writing to file: ${error.message}`)
+        throw error
+      })
     }
 
     // Get the final results
