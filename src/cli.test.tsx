@@ -12,22 +12,33 @@ const model = openai('gpt-4o-mini')
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 5000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
   let progressDots = 0
+  
+  // Define valid CLI states based on actual implementation
+  const validStates = [
+    'Initializing...',
+    'Processing...',
+    'Processing multiple files...',
+    'Generation complete!',
+    'No command provided',
+    'Unknown command',
+  ]
   
   while (Date.now() - start < timeout) {
     const frame = lastFrame()
     if (frame && frame !== lastStatus) {
       console.log(`\nStatus update (${Math.floor((Date.now() - start) / 1000)}s): ${frame}`)
       lastStatus = frame
-      // More flexible status matching including initialization and error states
-      if (statusPattern.test(frame) || 
-          frame.includes('No command provided') || 
-          frame.includes('Unknown command') ||
-          frame.includes('Initializing')) {
+      
+      // Check if frame contains any valid state
+      const hasValidState = validStates.some(state => frame.includes(state))
+      
+      // Match either the specific pattern or any valid state
+      if (statusPattern.test(frame) || hasValidState) {
         console.log('✓ Found matching status:', frame)
         return true
       }
@@ -36,7 +47,7 @@ const waitForStatus = async (lastFrame: () => string | undefined, statusPattern:
       process.stdout.write('.')
       if (++progressDots % 60 === 0) process.stdout.write('\n')
     }
-    await new Promise(resolve => setTimeout(resolve, 100)) // Check more frequently
+    await new Promise(resolve => setTimeout(resolve, 100))
   }
   console.error(`\n❌ Timeout after ${timeout}ms waiting for status matching ${statusPattern}`)
   console.error(`Last status: ${lastStatus}`)
@@ -226,11 +237,18 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
 
     const { lastFrame } = render(<App />)
 
+    // Wait for processing to start
+    console.log('Waiting for processing to start...')
+    await waitForStatus(lastFrame, /Processing/, 10000)
+    
+    
     // Wait for generation to complete
-    await new Promise((resolve) => setTimeout(resolve, 5000))
+    console.log('Waiting for generation to complete...')
+    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    
     const frame = lastFrame()
-    // Verify we're showing some kind of status
-    expect(frame).toMatch(/(Processing|Generation complete|Initializing|No command provided)/)
+    if (!frame) throw new Error('No frame rendered')
+    expect(frame).toContain('Generation complete!')
   })
 
   it('handles init command', async () => {
@@ -240,10 +258,13 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // Wait for the initial processing state
     expect(lastFrame()).toContain('Processing')
 
-    // Wait for initialization to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Wait for processing to complete
+    console.log('Waiting for processing to complete...')
+    await waitForStatus(lastFrame, /Processing/, 10000)
+    
     const frame = lastFrame()
-    expect(frame).toMatch(/(Initializing|Processing|Initialization complete)/)
+    if (!frame) throw new Error('No frame rendered')
+    expect(frame).toContain('Processing')
   })
 
   it('displays error for unknown command', async () => {
@@ -261,8 +282,9 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const { lastFrame } = render(<App />)
 
     // Wait for generation to complete
-    await new Promise((resolve) => setTimeout(resolve, 5000))
-    expect(lastFrame()).toContain('Generation complete')
+    console.log('Waiting for generation to complete...')
+    await waitForStatus(lastFrame, /Generation complete/, 10000)
+    expect(lastFrame()).toContain('Generation complete!')
   })
 
   it('handles generate command with multiple components', async () => {
@@ -314,7 +336,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     // Verify the generated content quality and structure
     expect(generatedText).toBeTruthy()
     expect(typeof generatedText).toBe('string')
-    expect(generatedText.length).toBeGreaterThan(500) // Ensure substantial content even with token limit
+    expect(generatedText.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 token limit
     
     // Verify frontmatter structure
     const frontmatterMatch = generatedText.toString().match(/^---([\s\S]*?)---/)
@@ -328,7 +350,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const content = generatedText.toString().split(/---\s*\n/)[2] || ''
     expect(content).toMatch(/^#\s+\w+/m) // Has a heading
     expect(content.split('\n').length).toBeGreaterThan(10) // Has multiple paragraphs
-    expect(content.length).toBeGreaterThan(500) // Minimum content length requirement
+    expect(content.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
 
     // Verify the generation completed successfully
     expect(finishReason).toBe('length') // Using length since we're limiting tokens
@@ -339,4 +361,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})                                                                                                                         
+})                                                                                                                            

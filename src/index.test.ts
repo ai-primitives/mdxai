@@ -217,7 +217,7 @@ describe('generateMDX', () => {
 
       // Verify streamed content
       console.log('Verifying streamed content...')
-      expect(streamedContent.length).toBeGreaterThan(20) // Further reduced expectation for parallel execution
+      expect(streamedContent.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 token limit
       expect(streamedContent).toMatch(/^---[\s\S]*?---/)
 
     } catch (error) {
