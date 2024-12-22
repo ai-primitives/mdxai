@@ -12,7 +12,7 @@ const model = openai('gpt-4o-mini')
 import type * as ReactTypes from 'react'
 
 // Helper function to wait for specific status with better timeout handling
-const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 30000) => {
+const waitForStatus = async (lastFrame: () => string | undefined, statusPattern: RegExp, timeout = 10000) => {
   console.log(`Waiting for status matching ${statusPattern} with timeout ${timeout}ms`)
   const start = Date.now()
   let lastStatus = ''
@@ -68,17 +68,17 @@ describe('CLI', () => {
     try {
       // Wait for processing to start with timeout
       await Promise.race([
-        waitForStatus(lastFrame, /Processing/, 45000),
+        waitForStatus(lastFrame, /Processing/, 10000),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Processing timeout')), 45000)
+          setTimeout(() => reject(new Error('Processing timeout')), 10000)
         )
       ])
       
       // Wait for generation to complete with timeout
       await Promise.race([
-        waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 45000),
+        waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 10000),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Generation timeout')), 45000)
+          setTimeout(() => reject(new Error('Generation timeout')), 10000)
         )
       ])
       
@@ -112,7 +112,7 @@ describe('CLI', () => {
       let startTime = Date.now()
       let lastLogTime = startTime
       
-      while (Date.now() - startTime < 30000) {
+      while (Date.now() - startTime < 10000) {
         const frame = lastFrame()
         
         // Log progress every 10 seconds
@@ -254,9 +254,9 @@ describe('CLI', () => {
 
     // Wait for processing and generation with better timeout handling
     console.log('Waiting for processing to start...')
-    await waitForStatus(lastFrame, /Processing/, 120000)
+    await waitForStatus(lastFrame, /Processing/, 10000)
     console.log('Waiting for generation to complete...')
-    await waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 120000)
+    await waitForStatus(lastFrame, /(Generation complete|Completed|Done)/, 10000)
     
     const frame = lastFrame()
     if (!frame) throw new Error('No frame rendered')
@@ -307,4 +307,4 @@ describe('CLI', () => {
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete)/)
   })
-})                                                                                                    
+})                                                                                                       

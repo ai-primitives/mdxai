@@ -4,9 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    testTimeout: 30000, // 30 second timeout per test for faster failures
-    hookTimeout: 180000,
-    teardownTimeout: 15000,
+    testTimeout: 10000, // 10 second timeout per test for faster failures with reduced tokens
+    hookTimeout: 30000, // Reduced but keeping longer than test timeout for setup/teardown
+    teardownTimeout: 10000,
     setupFiles: ['dotenv/config'],
     fileParallelism: true,
     maxConcurrency: 20,

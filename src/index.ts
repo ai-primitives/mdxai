@@ -63,7 +63,7 @@ Ensure the frontmatter is properly indented YAML.`
 
     // Stream and accumulate content with timeout
     const streamTimeout = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Stream timeout')), 45000)
+      setTimeout(() => reject(new Error('Stream timeout')), 10000)
     )
 
     try {
