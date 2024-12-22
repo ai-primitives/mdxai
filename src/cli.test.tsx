@@ -101,7 +101,7 @@ describe('CLI', () => {
   it('handles editing existing MDX content', async () => {
     const filepath = 'blog/future-of-ai.mdx'
     const instructions = 'add more real-world examples from recent news'
-    process.argv = ['node', 'mdxai', filepath, instructions]
+    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100']
 
     const { lastFrame } = render(<App />)
     console.log('Starting content editing test...')
@@ -146,7 +146,7 @@ describe('CLI', () => {
   it('handles glob pattern for multiple files', async () => {
     const globPattern = 'content/**/*'
     const instructions = 'change the voice of the content to be more conversational'
-    process.argv = ['node', 'mdxai', globPattern, instructions]
+    process.argv = ['node', 'mdxai', globPattern, instructions, '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame } = render(<App />)
 
@@ -162,7 +162,7 @@ describe('CLI', () => {
   it('generates MDX content with proper frontmatter and schema', async () => {
     const filepath = 'blog/test-article.mdx'
     const instructions = 'write a technical article about testing'
-    process.argv = ['node', 'mdxai', filepath, instructions]
+    process.argv = ['node', 'mdxai', filepath, instructions, '--max-tokens', '100']
 
     const { lastFrame } = render(<App />)
 
@@ -222,7 +222,7 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
   })
 
   it('handles generate command with type option', async () => {
-    process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article']
+    process.argv = ['node', 'mdxai', 'generate', '--type=https://schema.org/Article', '--max-tokens', '100', '--model', 'gpt-4o-mini']
 
     const { lastFrame } = render(<App />)
 
@@ -339,4 +339,4 @@ Keep content concise (around 100 tokens) and include at least one heading.`,
     const frame = lastFrame()
     expect(frame).toMatch(/(Initializing|Processing|Generation complete|No command provided)/)
   })
-})                                                                                                                   
+})                                                                                                                         

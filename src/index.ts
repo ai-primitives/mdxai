@@ -7,7 +7,7 @@ import { dirname } from 'path'
 // Add setTimeout to global scope for ESLint
 const { setTimeout } = globalThis
 
-const model = openai(process.env.OPENAI_MODEL || 'gpt-4o-mini')
+const defaultModel = openai(process.env.OPENAI_MODEL || 'gpt-4o-mini')
 
 export interface GenerateOptions {
   type: string
@@ -18,10 +18,14 @@ export interface GenerateOptions {
   topic?: string
   maxTokens?: number // Maximum tokens to generate (default: 100)
   instructions?: string // Instructions for content generation
+  model?: string // AI model to use (default: gpt-4o-mini)
 }
 
 export async function generateMDX(options: GenerateOptions) {
-  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 100 } = options
+  const { type, filepath, content: inputContent, components = [], count = 1, topic, maxTokens = 100, model: customModel } = options
+
+  // Use custom model if provided, otherwise use default
+  const model = customModel ? openai(customModel) : defaultModel
 
   // Construct the system prompt
   const system = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.

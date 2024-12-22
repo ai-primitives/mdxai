@@ -50,6 +50,11 @@ const cli = meow(
       maxTokens: {
         type: 'number',
         default: 100,
+        alias: 'max-tokens'
+      },
+      model: {
+        type: 'string',
+        default: 'gpt-4o-mini'
       },
     },
   },
