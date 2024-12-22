@@ -4,7 +4,7 @@ import { openai } from '@ai-sdk/openai'
 import { writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
-const model = openai('gpt-4o-mini')
+const model = openai(process.env.OPENAI_MODEL || 'gpt-4o-mini')
 
 export interface GenerateOptions {
   type: string
@@ -18,8 +18,9 @@ export interface GenerateOptions {
 export async function generateMDX(options: GenerateOptions) {
   const { type, filepath, content: inputContent, components = [], count = 1, topic } = options
 
+
   // Construct the system prompt
-  const systemPrompt = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
+  const system = `You are an expert MDX content generator. Generate MDX content that follows ${type} schema.
 ${components.length > 0 ? `Use these components where appropriate: ${components.join(', ')}` : ''}
 Important: Return ONLY the raw MDX content. Do not wrap it in code blocks or add any formatting.
 The frontmatter MUST include either a $type or @type field with the schema type (e.g. $type: https://schema.org/Article or @type: https://schema.org/Article).
@@ -27,7 +28,7 @@ Do not use quotes around the schema type value.
 Format the frontmatter as valid YAML with proper indentation.`
 
   // Construct the user prompt
-  const userPrompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${
+  const prompt = `Generate ${count > 1 ? `${count} different versions of` : ''} MDX content${
     topic ? ` about ${topic}` : ''
   }${inputContent ? ` based on this content:\n\n${inputContent}` : ''}.
 Include appropriate frontmatter with schema.org metadata, including either $type or @type field without quotes.
@@ -37,9 +38,9 @@ Ensure the frontmatter is properly indented YAML.`
     // Use streamText to generate content
     const result = streamText({
       model,
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxTokens: 2000, // Adjust as needed
+      system,
+      prompt,
+      // maxTokens: 2000, // Adjust as needed
     })
 
     // Create a buffer to accumulate the content

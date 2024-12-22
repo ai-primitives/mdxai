@@ -155,6 +155,6 @@ export const App = () => {
 }
 
 // Only render if this file is being run directly
-if (import.meta.url === fileURLToPath(process.argv[1])) {
+if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/^file:\/\//, ''))) {
   render(<App />)
 }

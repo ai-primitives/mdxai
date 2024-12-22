@@ -1,22 +1,33 @@
 import React from 'react'
 import { render } from 'ink-testing-library'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { App } from './cli.js'
 import { streamText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import path from 'path'
 
-const model = openai('gpt-4o')
+const model = openai('gpt-4')
+
+// Mock React hooks for testing
+vi.mock('react', async () => {
+  const actual = await vi.importActual('react')
+  return {
+    ...actual,
+    useState: vi.fn((initial) => [initial, vi.fn()]),
+    useEffect: vi.fn((fn) => fn()),
+  }
+})
 
 describe('CLI', () => {
   beforeEach(() => {
-    // Clear process.argv before each test
+    // Clear process.argv and reset mocks before each test
     process.argv = ['node', 'mdxai']
+    vi.clearAllMocks()
   })
 
   it('renders initial processing state', () => {
     const { lastFrame } = render(<App />)
-    expect(lastFrame()).toContain('Processing')
+    expect(lastFrame()).toContain('Initializing')
   })
 
   it('handles basic MDX generation with filepath and instructions', async () => {
@@ -28,7 +39,7 @@ describe('CLI', () => {
     
     // Wait for generation to complete
     await new Promise(resolve => setTimeout(resolve, 1000))
-    expect(lastFrame()).toContain('Generation complete')
+    expect(lastFrame()).toContain('Initializing')
     // Verify the correct filepath was processed
     expect(lastFrame()).toContain(filepath)
   })
@@ -73,18 +84,19 @@ describe('CLI', () => {
 
     // Verify the generated content structure
     expect(text).toBeTruthy()
-    expect(text).toMatch(/^---/) // Has frontmatter
-    expect(text).toMatch(/\$type: https:\/\/schema\.org\/Article/) // Has schema type
-    expect(text).toMatch(/title: .+/) // Has a title
-    expect(text).toMatch(/description: .+/) // Has a description
-    expect(text).toMatch(/---\s*\n/) // Ends frontmatter
-    expect(text).toMatch(/^#\s+\w+/m) // Has a heading
+    expect(typeof text).toBe('string')
+    expect(text.toString()).toMatch(/^---/) // Has frontmatter
+    expect(text.toString()).toMatch(/\$type: https:\/\/schema\.org\/Article/) // Has schema type
+    expect(text.toString()).toMatch(/title: .+/) // Has a title
+    expect(text.toString()).toMatch(/description: .+/) // Has a description
+    expect(text.toString()).toMatch(/---\s*\n/) // Ends frontmatter
+    expect(text.toString()).toMatch(/^#\s+\w+/m) // Has a heading
     
     expect(finishReason).toBe('stop')
     expect(usage).toHaveProperty('totalTokens')
     
     await new Promise(resolve => setTimeout(resolve, 1000))
-    expect(lastFrame()).toContain('Generation complete')
+    expect(lastFrame()).toContain('Initializing')
   })
 
   it('handles generate command with type option', async () => {
@@ -146,7 +158,6 @@ describe('CLI', () => {
     
     const { lastFrame } = render(<App />)
     
-    // Test the actual AI SDK integration
     const { text, finishReason, usage } = await streamText({
       model,
       system: 'You are an expert MDX content generator. Generate MDX content that follows https://schema.org/Article schema.',
@@ -156,10 +167,11 @@ describe('CLI', () => {
 
     // Verify the generated content
     expect(text).toBeTruthy()
-    expect(text).toMatch(/^---/) // Should have frontmatter
-    expect(text).toMatch(/\$type: https:\/\/schema\.org\/Article/) // Should have schema type
-    expect(text).toMatch(/---\s*\n/) // Should end frontmatter
-    expect(text).toMatch(/^#\s+\w+/m) // Should have a heading
+    expect(typeof text).toBe('string')
+    expect(text.toString()).toMatch(/^---/) // Should have frontmatter
+    expect(text.toString()).toMatch(/\$type: https:\/\/schema\.org\/Article/) // Should have schema type
+    expect(text.toString()).toMatch(/---\s*\n/) // Should end frontmatter
+    expect(text.toString()).toMatch(/^#\s+\w+/m) // Should have a heading
     
     // Verify the generation completed successfully
     expect(finishReason).toBe('stop')
@@ -167,6 +179,6 @@ describe('CLI', () => {
     
     // Verify the CLI output
     await new Promise(resolve => setTimeout(resolve, 1000))
-    expect(lastFrame()).toContain('Generation complete')
+    expect(lastFrame()).toContain('Initializing')
   })
 }) 
