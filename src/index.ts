@@ -28,46 +28,52 @@ ${components.length > 0 ? `Use these components where appropriate: ${components.
   }${inputContent ? ` based on this content:\n\n${inputContent}` : ''}.
 Include appropriate frontmatter with schema.org metadata.`
 
-  // Use streamText to generate content
-  const result = await streamText({
-    model,
-    system: systemPrompt,
-    prompt: userPrompt,
-    maxTokens: 2000, // Adjust as needed
-  })
+  try {
+    // Use streamText to generate content
+    const result = streamText({
+      model,
+      system: systemPrompt,
+      prompt: userPrompt,
+      maxTokens: 2000, // Adjust as needed
+    })
 
-  // If filepath is provided, ensure the directory exists and stream to file
-  if (filepath) {
-    try {
-      // Ensure the directory exists
-      await mkdir(dirname(filepath), { recursive: true })
+    // Create a buffer to accumulate the content
+    let content = ''
 
-      // Create a buffer to accumulate the content
-      let content = ''
-
-      // Stream to both stdout and accumulate for file
-      for await (const chunk of result.textStream) {
-        process.stdout.write(chunk) // Write to stdout
-        content += chunk // Accumulate for file
-      }
-
-      // Write the complete content to file
-      await writeFile(filepath, content, 'utf-8')
-    } catch (error) {
-      console.error(`Error writing to file: ${error.message}`)
-      throw error
+    // Stream and accumulate content
+    for await (const chunk of result.textStream) {
+      content += chunk
     }
-  }
 
-  // Wait for the text to be fully generated
-  const text = await result.text
-  const finishReason = await result.finishReason
-  const usage = await result.usage
+    // If filepath is provided, ensure the directory exists and write to file
+    if (filepath) {
+      try {
+        // Ensure the directory exists
+        await mkdir(dirname(filepath), { recursive: true })
+        // Write the complete content to file
+        await writeFile(filepath, content, 'utf-8')
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error(`Error writing to file: ${error.message}`)
+        }
+        throw error
+      }
+    }
 
-  return {
-    stream: result.textStream,
-    text,
-    finishReason,
-    usage,
+    // Get the final results
+    const finishReason = await result.finishReason
+    const usage = await result.usage
+
+    return {
+      stream: result.textStream,
+      text: content,
+      finishReason,
+      usage,
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error(`Error generating MDX: ${error.message}`)
+    }
+    throw error
   }
 }
