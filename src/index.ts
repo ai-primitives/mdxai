@@ -29,7 +29,7 @@ ${components.length > 0 ? `Use these components where appropriate: ${components.
 Include appropriate frontmatter with schema.org metadata.`
 
   // Use streamText to generate content
-  const { textStream, text, finishReason, usage } = await streamText({
+  const result = await streamText({
     model,
     system: systemPrompt,
     prompt: userPrompt,
@@ -46,7 +46,7 @@ Include appropriate frontmatter with schema.org metadata.`
       let content = ''
 
       // Stream to both stdout and accumulate for file
-      for await (const chunk of textStream) {
+      for await (const chunk of result.textStream) {
         process.stdout.write(chunk) // Write to stdout
         content += chunk // Accumulate for file
       }
@@ -57,15 +57,15 @@ Include appropriate frontmatter with schema.org metadata.`
       console.error(`Error writing to file: ${error.message}`)
       throw error
     }
-  } else {
-    // If no filepath, just stream to stdout
-    for await (const chunk of textStream) {
-      process.stdout.write(chunk)
-    }
   }
 
+  // Wait for the text to be fully generated
+  const text = await result.text
+  const finishReason = await result.finishReason
+  const usage = await result.usage
+
   return {
-    stream: textStream,
+    stream: result.textStream,
     text,
     finishReason,
     usage,
