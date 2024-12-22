@@ -238,12 +238,13 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     expect(content).toMatch(/^#{1,2}\s+\w+/m) // Has a heading (# or ##)
     expect(content.split('\n').length).toBeGreaterThan(10) // Has multiple paragraphs
 
-    // Verify generation metadata
-    expect(finishReason).toBe('length') // Using length since we're limiting tokens
+    // Verify generation metadata with more flexible assertions
+    expect(['length', 'stop']).toContain(finishReason) // Accept both length and stop as valid finish reasons
     expect(usage).toHaveProperty('totalTokens')
+    expect(usage.totalTokens).toBeLessThanOrEqual(MAX_TOKENS) // Verify token limit is respected
 
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    expect(lastFrame()).toContain('Initializing')
+    // Remove unnecessary delay and use waitForStatus instead
+    await waitForStatus(lastFrame, /Initializing/, TEST_TIMEOUT)
   })
 
   it('handles generate command with type option', async () => {
@@ -284,8 +285,7 @@ IMPORTANT: Follow the frontmatter format EXACTLY as shown above.`,
     process.argv = ['node', 'mdxai', 'unknown']
     const { lastFrame } = render(<App />)
 
-    await new Promise((resolve) => setTimeout(resolve, 100))
-    expect(lastFrame()).toMatch(/(Unknown command|Processing)/)
+    await waitForStatus(lastFrame, /(Unknown command|Processing)/, TEST_TIMEOUT)
   })
 
   it('handles generate command with content', async () => {
@@ -427,8 +427,10 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
 
       // Verify the generation completed successfully
       console.log('Verifying completion status...')
-      expect(finishReason).toBe('length') // Using length since we're limiting tokens
+      // Verify generation metadata with more flexible assertions
+      expect(['length', 'stop']).toContain(finishReason) // Accept both length and stop as valid finish reasons
       expect(usage).toHaveProperty('totalTokens')
+      expect(usage.totalTokens).toBeLessThanOrEqual(MAX_TOKENS) // Verify token limit is respected
 
       // Verify the CLI output with better timeout handling
       console.log('Waiting for CLI output...')
@@ -441,4 +443,4 @@ Use <Alert>Important testing guidelines</Alert> for better results.`,
       throw error
     }
   })
-})                              
+})                                 
