@@ -4,9 +4,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    testTimeout: 10000, // 10 second timeout per test
-    hookTimeout: 10000, // Consistent 10s timeout
-    teardownTimeout: 10000, // Consistent 10s timeout
+    testTimeout: 10000, // 10 second timeout for AI-dependent tests
+    hookTimeout: 10000, // Consistent timeout
+    teardownTimeout: 10000, // Consistent timeout
     maxConcurrency: 20, // Maximum concurrent tests
     pool: 'threads',
     poolOptions: {

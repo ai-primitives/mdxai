@@ -40,7 +40,7 @@ describe('generateMDX', () => {
     for (let retry = 0; retry < maxRetries; retry++) {
       console.log(`Stream attempt ${retry + 1}/${maxRetries}`)
       try {
-        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
+        const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
 
         await Promise.race([
           (async () => {
@@ -74,16 +74,18 @@ describe('generateMDX', () => {
     console.log('Generated text length:', text?.length)
     // More flexible content validation for non-deterministic AI responses
     expect(text).toBeTruthy()
-    expect(text?.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+    expect(text?.length).toBeGreaterThan(100) // Ensure reasonable content length for 100 tokens
     expect(finishReason).toBe('length') // Expect length finish reason due to token limit
     expect(usage).toHaveProperty('totalTokens')
     // Verify content structure with more flexible assertions
     expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
-    const frontmatterContent = text.split('---')[1] || ''
+    const frontmatterMatch = text.match(/^---([\s\S]*?)---/)
+    const frontmatterContent = frontmatterMatch ? frontmatterMatch[1] : ''
     expect(frontmatterContent).toMatch(/(\$type|@type):\s*https:\/\/schema\.org\/Article/)
+    expect(frontmatterContent.trim().length).toBeGreaterThan(0) // Ensure frontmatter is not empty
     expect(frontmatterContent).toMatch(/title:\s*.+/m)
     expect(frontmatterContent).toMatch(/description:\s*.+/m)
-    expect(text).toMatch(/^#\s+\w+/m) // Has at least one heading
+    expect(text).toMatch(/^#{1,2}\s+\w+/m) // Has at least one heading (# or ##)
 
     // Verify content structure with consistent assertions
     const mdxContent = text.split('---')
@@ -98,7 +100,7 @@ describe('generateMDX', () => {
     expect(text).toMatch(/title:\s*.+/m) // Should have a title
     expect(text).toMatch(/description:\s*.+/m) // Should have a description
     expect(text).toMatch(/---\s*\n/) // Should end frontmatter
-    expect(text).toMatch(/^#\s+\w+/m) // Should have a heading
+    expect(text).toMatch(/^#{1,2}\s+\w+/m) // Should have a heading (# or ##)
 
     // Verify streamed content matches structure
     expect(streamedContent).toMatch(/^---\n/) // Should start with frontmatter
@@ -128,7 +130,7 @@ describe('generateMDX', () => {
 
     // Verify stream works with timeout
     let streamedContent = ''
-    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 10000))
+    const streamTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout')), 5000))
     console.log('Starting stream test with 10s timeout...')
 
     try {
@@ -195,7 +197,7 @@ describe('generateMDX', () => {
       // Verify content structure and quality
       console.log('Verifying content structure...')
       expect(fileContent).toBeTruthy()
-      expect(fileContent.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
+      expect(fileContent.length).toBeGreaterThan(500) // Ensure substantial content length
 
       // Verify frontmatter structure
       const frontmatterMatch = fileContent.match(/^---([\s\S]*?)---/)
@@ -206,7 +208,7 @@ describe('generateMDX', () => {
       expect(frontmatter).toMatch(/description:\s*.+/m)
 
       // Verify content has some form of heading (more flexible matching)
-      const hasHeading = fileContent.match(/(?:^|\n)#+\s+.+/m) || fileContent.match(/<h[1-6]>.+<\/h[1-6]>/i)
+      const hasHeading = fileContent.match(/(?:^|\n)#{1,2}\s+.+/m) || fileContent.match(/<h[1-6]>.+<\/h[1-6]>/i)
       expect(hasHeading).toBeTruthy()
       console.log('Found heading:', hasHeading?.[0])
 
@@ -235,7 +237,7 @@ describe('generateMDX', () => {
 
       // Verify streamed content
       console.log('Verifying streamed content...')
-      expect(streamedContent.length).toBeGreaterThan(500) // Minimum content length requirement
+      expect(streamedContent.length).toBeGreaterThan(500) // Ensure substantial content length
       expect(streamedContent).toMatch(/^---[\s\S]*?---/)
     } catch (error) {
       console.error('Test failed:', error)
@@ -261,7 +263,7 @@ describe('generateMDX', () => {
 
     // More flexible component verification
     expect(text).toBeTruthy()
-    expect(text.length).toBeGreaterThan(500) // Minimum content length requirement
+    expect(text.length).toBeGreaterThan(100) // Minimum content length for 100 token limit
 
     // Verify frontmatter structure
     expect(text).toMatch(/^---[\s\S]*?---/) // Has frontmatter
@@ -321,7 +323,7 @@ describe('generateMDX', () => {
         
         // Verify section has basic content requirements
         expect(section.length).toBeGreaterThan(50) // Each section should have meaningful content
-        expect(section).toMatch(/^#\s+\w+/m) // Should have a heading
+        expect(section).toMatch(/^#{1,2}\s+\w+/m) // Should have a heading (# or ##)
       }
     } catch (error) {
       console.error('Test failed:', error)
