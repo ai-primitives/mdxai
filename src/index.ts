@@ -19,6 +19,7 @@ export interface GenerateOptions {
   maxTokens?: number // Maximum tokens to generate (default: 100)
   instructions?: string // Instructions for content generation
   model?: string // AI model to use (default: gpt-4o-mini)
+  temperature?: number // Temperature for generation (default: 0.7)
 }
 
 export async function generateMDX(options: GenerateOptions) {

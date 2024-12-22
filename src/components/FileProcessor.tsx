@@ -1,14 +1,5 @@
 import React, { useState, type FC } from 'react'
 import { Box, Text } from 'ink'
-// Spinner component temporarily commented out to resolve TypeScript issues
-// import { default as SpinnerIcon } from 'ink-spinner'
-
-// type SpinnerName = 'dots' | 'dots2' | 'dots3' | 'dots4' | 'dots5' | 'dots6' | 'dots7' | 'dots8' | 'dots9' | 'dots10' | 'dots11' | 'dots12'
-
-// // Create a properly typed Spinner component
-// const Spinner: FC<{ type?: SpinnerName }> = ({ type = 'dots' }) => {
-//   return SpinnerIcon({ type }) as any
-// }
 
 interface FileProcessorProps {
   files: string[]
