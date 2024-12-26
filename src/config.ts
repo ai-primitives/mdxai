@@ -1,4 +1,4 @@
-import type { ProgressCallback } from './index'
+import type { ProgressCallback } from './index.js'
 
 export interface AIConfig {
   apiKey?: string

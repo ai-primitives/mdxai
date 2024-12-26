@@ -67,7 +67,7 @@ describe('CLI', () => {
   const mockStdoutWrite = vi.fn().mockReturnValue(true)
   const mockStderrWrite = vi.fn().mockReturnValue(true)
   const mockExit = vi.fn().mockImplementation((code?: number) => {
-    throw new Error(`Process exited with code ${code}`)
+    throw new Error(`Process exited with code ${code || 1}`)
   })
 
   beforeEach(() => {
@@ -119,7 +119,7 @@ describe('CLI', () => {
 
     // Check console output
     expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Generating MDX'))
-    expect(mockStdoutWrite).toHaveBeenCalledWith(expect.stringContaining('$type: BlogPost'))
+    expect(mockStdoutWrite).toHaveBeenCalledWith(expect.stringContaining('$type: https://schema.org/BlogPost'))
   })
 
   it('handles errors gracefully', async () => {

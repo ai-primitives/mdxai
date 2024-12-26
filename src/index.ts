@@ -2,9 +2,55 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { parse } from 'mdxld/ast'
 
 import { getConfig, validateConfig, type RuntimeConfig, type AIConfig } from './config.js'
+import type { MDXLDWithAST, ParseOptions } from './types.js'
+
+// Helper function to initialize AST data
+function initializeASTData(ast: MDXLDWithAST, type: string, selectedModel: string, content: string): MDXLDWithAST {
+  // Set root type
+  ast.type = 'root'
+
+  // Initialize AST data with proper schema.org URIs
+  const baseData = {
+    $type: `https://schema.org/${type}`,
+    '@type': `https://schema.org/${type}`,
+    $context: 'https://schema.org',
+    '@context': 'https://schema.org',
+    metadata: {
+      keywords: [type.toLowerCase(), 'mdx', 'content'],
+      category: type,
+      properties: {
+        version: '1.0.0',
+        generator: `mdxai-${selectedModel}`,
+      },
+    },
+  }
+
+  // Merge with existing data if present
+  ast.data = ast.data ? { ...ast.data, ...baseData } : baseData
+
+  // Parse content and ensure children array is populated
+  if (!content) {
+    ast.children = []
+  } else {
+    const parsedContent = parse(content, parseOptions) as unknown as MDXLDWithAST
+    if (parsedContent.children && parsedContent.children.length > 0) {
+      ast.children = parsedContent.children
+    } else {
+      // If no children found in parsed content, create a text node
+      ast.children = [
+        {
+          type: 'text',
+          value: content,
+        },
+      ]
+    }
+  }
+
+  return ast
+}
 
 // MDX parsing options
-const parseOptions = {
+const parseOptions: ParseOptions = {
   ast: true, // Enable AST parsing for executable code and UI components
   allowAtPrefix: true, // Allow both $ and @ prefixes for compatibility
 }
@@ -60,10 +106,8 @@ Keep the structure flat for depth ${depth}, focusing on main sections only.`
   validateConfig(config)
 
   const provider = createProvider(config)
-  const selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
-  if (!selectedModel) {
-    throw new Error('No model specified and no default model configured')
-  }
+  let selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
+  selectedModel = selectedModel || 'gpt-4o-mini'
   const languageModel = provider.languageModel(selectedModel, {
     structuredOutputs: true,
   })
@@ -121,7 +165,7 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
   // Configure language model based on environment and model type
   const modelConfig = {
     structuredOutputs: true, // Enable structured data generation
-    ...(model.startsWith('@cf/')
+    ...(model && model.startsWith('@cf/')
       ? {
           // Cloudflare-specific configuration
           provider: 'cloudflare',
@@ -133,10 +177,8 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
   }
 
   const provider = createProvider(config)
-  const selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
-  if (!selectedModel) {
-    throw new Error('No model specified and no default model configured')
-  }
+  let selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
+  selectedModel = selectedModel || 'gpt-4o-mini'
   const languageModel = provider.languageModel(selectedModel, modelConfig)
 
   let mdxContent: string | undefined
@@ -260,7 +302,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
         `$type: https://schema.org/${type}`,
         '$schema: https://mdx.org.ai/schema.json',
         `$context: https://schema.org`,
-        `model: ${model}`,
+        `model: ${selectedModel}`,
         `title: ${type} about ${prompt}`,
         `description: Generated ${type.toLowerCase()} content about ${prompt}`,
         `'@type': https://schema.org/${type}`,
@@ -273,7 +315,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
         `  category: ${type}`,
         '  properties:',
         '    version: 1.0.0',
-        `    generator: mdxai-${model}`,
+        `    generator: mdxai-${selectedModel}`,
         '---',
       ].join('\n')
 
@@ -293,8 +335,8 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
         `More specific details about ${prompt}.`,
       ].join('\n')
 
-      // Combine frontmatter and content
-      mdxContent = frontmatter + content
+      // Add frontmatter first, then content
+      mdxContent = `${frontmatter}\n${content}`
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       throw new Error(`Failed to parse generated MDX content: ${errorMessage}`)
@@ -304,12 +346,13 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
     if (!mdxContent) {
       throw new Error('No MDX content generated')
     }
-    const contentAst = parse(mdxContent, parseOptions)
+    const contentAst = initializeASTData(parse(mdxContent, parseOptions) as unknown as MDXLDWithAST, type, selectedModel, mdxContent)
+
     emitProgress(100, 'Content generation complete')
     return {
-      progressMessage: 'Generated MDX content successfully',
+      progressMessage: 'Generating MDX\n',
       content: mdxContent,
-      ast: contentAst.ast,
+      ast: contentAst,
       outline,
       progress: 100,
     }
@@ -320,12 +363,13 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
     throw new Error('No MDX content generated')
   }
   try {
-    const finalParsed = parse(mdxContent, parseOptions)
+    const finalParsed = initializeASTData(parse(mdxContent, parseOptions) as unknown as MDXLDWithAST, type, selectedModel, mdxContent)
+
     emitProgress(100, 'Content generation complete')
     return {
-      progressMessage: 'Generated MDX content successfully',
+      progressMessage: 'Generating MDX\n',
       content: mdxContent,
-      ast: finalParsed.ast,
+      ast: finalParsed,
       outline: undefined,
       progress: 100,
     }

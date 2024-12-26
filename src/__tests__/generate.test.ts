@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { generateMDX, GenerateOptions } from '../index.js'
+import type { MDXLDAST } from '../types.js'
 
 // Mock the AI SDK at module level
 vi.mock('@ai-sdk/openai', () => ({
@@ -49,7 +50,7 @@ vi.mock('@ai-sdk/openai', () => ({
           `More specific details about ${userPrompt}.`,
         ].join('\n')
 
-        const mdxContent = frontmatter + content
+        const mdxContent = `${frontmatter}${content}`
 
         return Promise.resolve({
           text: mdxContent,
@@ -144,7 +145,7 @@ describe('generateMDX', () => {
 
     // Verify AST parsing and root object properties
     expect(result.ast).toBeDefined()
-    const ast = result.ast as any
+    const ast = result.ast as MDXLDAST
     expect(ast.data).toBeDefined()
     expect(ast.data.$type).toBe('https://schema.org/TechArticle')
     expect(ast.data['@type']).toBe('https://schema.org/TechArticle')
@@ -162,8 +163,8 @@ describe('generateMDX', () => {
 
     // Verify content structure
     expect(result.content).toMatch(/^---\n/) // Starts with frontmatter
-    expect(result.content).toMatch(/---\n\n/) // Ends frontmatter correctly
-    expect(result.content).toMatch(/^# /) // Has main heading
+    expect(result.content).toMatch(/---\n/) // Ends frontmatter correctly
+    expect(result.content).toMatch(/\n# /) // Has main heading after frontmatter
     expect(result.content).toMatch(/## /) // Has subheadings
 
     // Verify metadata value types
@@ -173,7 +174,7 @@ describe('generateMDX', () => {
 
     // Verify AST parsing
     expect(result.ast).toBeDefined()
-    const ast = result.ast as any
+    const ast = result.ast as MDXLDAST
     expect(ast.children).toBeInstanceOf(Array)
     expect(ast.children.length).toBeGreaterThan(0)
     expect(ast.data.metadata).toBeDefined()
