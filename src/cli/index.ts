@@ -57,20 +57,29 @@ export async function cli() {
     .name('mdxai')
     .description('Zero-config CLI to generate and update MDX structured data')
     .argument('<prompt>', 'Prompt for generating MDX content')
-    .option('--model <model>', 'AI model to use (default: gpt-4o-mini)')
+    .option('--model <model>', 'AI model to use (default: uses AI_MODEL env var)')
     .option('--type <type>', 'MDX-LD type (default: Article)')
+    .option('-r, --recursive', 'Enable recursive generation with outline', false)
+    .option('-d, --depth <depth>', 'Maximum recursion depth for outline generation', '1')
     .action(async (prompt, options) => {
       try {
-        const model = options.model || 'gpt-4o-mini'
+        const model = options.model || process.env.AI_MODEL || 'gpt-4o-mini'
         const type = options.type || 'Article'
+        const recursive = options.recursive || false
+        const depth = parseInt(options.depth || '1', 10)
         
         try {
           // Generate content
-          const { content } = await generateMDX({
+          const { content, progressMessage } = await generateMDX({
             prompt,
             model,
-            type
+            type,
+            recursive,
+            depth
           })
+          
+          // Write progress message to stderr for immediate feedback
+          writeToStderr(progressMessage)
           
           // Write progress message to stderr for immediate feedback
           writeToStderr('Generating MDX')
