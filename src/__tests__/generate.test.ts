@@ -1,14 +1,58 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { generateMDX, GenerateOptions } from '../index.js'
+
+// Mock the AI SDK at module level
+vi.mock('@ai-sdk/openai', () => ({
+  createOpenAI: vi.fn().mockImplementation(() => ({
+    languageModel: vi.fn().mockImplementation((model) => ({
+      doGenerate: vi.fn().mockImplementation((options) => {
+        // Get the actual prompt text and type from the options
+        const promptText = options.prompt[0]?.text || ''
+        const type = options.type || 'Article'
+        const userPrompt = promptText
+
+        const mdxContent = `---
+$schema: https://mdx.org.ai/schema.json
+$type: ${type}
+model: ${model}
+title: ${type} about ${userPrompt}
+description: Generated ${type.toLowerCase()} content about ${userPrompt}
+---
+
+# ${userPrompt}
+
+This is a generated ${type.toLowerCase()} about ${userPrompt}.
+
+## Overview
+
+Detailed information about ${userPrompt}.
+
+## Details
+
+More specific details about ${userPrompt}.`
+
+        return Promise.resolve({
+          text: mdxContent,
+          progressMessage: 'Generating MDX\n'
+        })
+      })
+    }))
+  }))
+}))
 
 describe('generateMDX', () => {
   beforeEach(() => {
     // Set up environment variables for testing
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable must be set for tests')
-    }
+    process.env.OPENAI_API_KEY = 'test-key'
     process.env.AI_MODEL = 'gpt-4o-mini'
-    process.env.AI_GATEWAY = process.env.AI_GATEWAY || 'https://api.test.com'
+    process.env.AI_GATEWAY = 'https://api.test.com'
+    
+    // Reset all mocks before each test
+    vi.clearAllMocks()
+  })
+
+  afterEach(() => {
+    vi.clearAllMocks()
   })
   it('should generate MDX content with proper frontmatter', async () => {
     const options: GenerateOptions = {
