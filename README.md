@@ -38,6 +38,7 @@ mdxai [options] <filepath> <prompt>
 ```
 
 Options:
+
 - `--max-tokens` - Maximum tokens for generation (default: no limit)
 - `--model` - Model to use (default: gpt-4o-mini)
 
