@@ -15,8 +15,8 @@ export interface RuntimeConfig {
 // Default configuration that works in any runtime
 const defaultConfig: RuntimeConfig = {
   aiConfig: {
-    defaultModel: 'gpt-4o-mini'
-  }
+    defaultModel: 'gpt-4o-mini',
+  },
 }
 
 // Get configuration based on runtime environment
@@ -28,8 +28,8 @@ export function getConfig(options?: Partial<RuntimeConfig>): RuntimeConfig {
       ...options,
       aiConfig: {
         ...defaultConfig.aiConfig,
-        ...options?.aiConfig
-      }
+        ...options?.aiConfig,
+      },
     }
   }
 
@@ -43,8 +43,8 @@ export function getConfig(options?: Partial<RuntimeConfig>): RuntimeConfig {
       baseURL: process.env.AI_GATEWAY,
       workerToken: process.env.CF_WORKERS_AI_TOKEN,
       defaultModel: process.env.AI_MODEL || defaultConfig.aiConfig.defaultModel,
-      ...options?.aiConfig
-    }
+      ...options?.aiConfig,
+    },
   }
 }
 

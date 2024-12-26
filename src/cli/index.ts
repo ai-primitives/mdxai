@@ -67,8 +67,8 @@ export async function cli() {
       try {
         const config = getConfig({
           aiConfig: {
-            defaultModel: options.model
-          }
+            defaultModel: options.model,
+          },
         })
         const type = options.type || 'Article'
         const recursive = options.recursive || false
@@ -87,7 +87,7 @@ export async function cli() {
               if (progress === 100) {
                 process.stderr.write('\n')
               }
-            }
+            },
           })
 
           // Write progress message to stderr for immediate feedback

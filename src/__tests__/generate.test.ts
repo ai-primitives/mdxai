@@ -112,14 +112,14 @@ describe('generateMDX', () => {
     expect(result.content).toMatch(/'@type': https:\/\/schema\.org\/Product/)
     expect(result.content).toMatch(/\$context: https:\/\/schema\.org/)
     expect(result.content).toMatch(/'@context': https:\/\/schema\.org/)
-    
+
     // Verify nested metadata structure
     expect(result.content).toMatch(/metadata:/)
     expect(result.content).toMatch(/keywords:/)
     expect(result.content).toMatch(/- product/)
     expect(result.content).toMatch(/properties:/)
     expect(result.content).toMatch(/version: 1\.0\.0/)
-    
+
     // Verify content length and structure
     expect(result.content.length).toBeGreaterThan(500)
     expect(result.content).toContain('product description')

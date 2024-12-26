@@ -55,7 +55,7 @@ Include title and brief description for each section. Format as a JSON array of 
 Keep the structure flat for depth ${depth}, focusing on main sections only.`
 
   const config = getConfig({
-    aiConfig: { defaultModel: model }
+    aiConfig: { defaultModel: model },
   })
   validateConfig(config)
 
@@ -101,12 +101,12 @@ Keep the structure flat for depth ${depth}, focusing on main sections only.`
 export async function generateMDX(options: GenerateOptions): Promise<GenerateResult> {
   const { prompt, model, type = 'Article', recursive = false, depth = 1, onProgress, aiConfig } = options
 
-  const config = getConfig({ 
-    aiConfig: { 
+  const config = getConfig({
+    aiConfig: {
       ...aiConfig,
-      defaultModel: model 
+      defaultModel: model,
     },
-    onProgress 
+    onProgress,
   })
   validateConfig(config)
 
@@ -311,7 +311,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
       content: mdxContent,
       ast: contentAst.ast,
       outline,
-      progress: 100
+      progress: 100,
     }
   }
 
@@ -327,7 +327,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
       content: mdxContent,
       ast: finalParsed.ast,
       outline: undefined,
-      progress: 100
+      progress: 100,
     }
   } catch (error: unknown) {
     // If parsing fails, still return the content but without AST
@@ -338,7 +338,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
       content: mdxContent,
       ast: undefined,
       outline: undefined,
-      progress: 100
+      progress: 100,
     }
   }
 }
