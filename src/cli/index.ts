@@ -71,7 +71,7 @@ export async function cli() {
 
         try {
           // Generate content
-          const { content, progressMessage } = await generateMDX({
+          const { content } = await generateMDX({
             prompt,
             model,
             type,
@@ -81,14 +81,13 @@ export async function cli() {
 
           // Write progress message to stderr for immediate feedback
           writeToStderr('Generating MDX\n')
-          
+
           // Write content to stdout for piping
           process.stdout.write(content + '\n')
         } catch (error) {
           // Write detailed error to stderr for debugging
-          const errorMessage = error instanceof Error 
-            ? `Failed to generate MDX content: ${error.message}\nStack: ${error.stack}`
-            : 'Failed to generate MDX content: Unknown error'
+          const errorMessage =
+            error instanceof Error ? `Failed to generate MDX content: ${error.message}\nStack: ${error.stack}` : 'Failed to generate MDX content: Unknown error'
           writeToStderr(formatError(errorMessage))
           process.exit(1)
         }

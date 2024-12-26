@@ -11,33 +11,42 @@ vi.mock('@ai-sdk/openai', () => ({
         const type = options.type || 'Article'
         const userPrompt = promptText
 
-        const mdxContent = `---
-$schema: https://mdx.org.ai/schema.json
-$type: ${type}
-model: ${model}
-title: ${type} about ${userPrompt}
-description: Generated ${type.toLowerCase()} content about ${userPrompt}
----
+        // Create frontmatter with required fields in specific order
+        const frontmatter = [
+          '---',
+          `$type: ${type}`,
+          '$schema: https://mdx.org.ai/schema.json',
+          `model: ${model}`,
+          `title: ${type} about ${userPrompt}`,
+          `description: Generated ${type.toLowerCase()} content about ${userPrompt}`,
+          '---',
+        ].join('\n')
 
-# ${userPrompt}
+        const content = [
+          '',
+          `# ${userPrompt}`,
+          '',
+          `This is a generated ${type.toLowerCase()} about ${userPrompt}.`,
+          '',
+          '## Overview',
+          '',
+          `Detailed information about ${userPrompt}.`,
+          '',
+          '## Details',
+          '',
+          `More specific details about ${userPrompt}.`,
+        ].join('\n')
 
-This is a generated ${type.toLowerCase()} about ${userPrompt}.
-
-## Overview
-
-Detailed information about ${userPrompt}.
-
-## Details
-
-More specific details about ${userPrompt}.`
+        const mdxContent = frontmatter + content
 
         return Promise.resolve({
           text: mdxContent,
-          progressMessage: 'Generating MDX\n'
+          progressMessage: 'Generating MDX\n',
+          content: mdxContent,
         })
-      })
-    }))
-  }))
+      }),
+    })),
+  })),
 }))
 
 describe('generateMDX', () => {
@@ -46,7 +55,7 @@ describe('generateMDX', () => {
     process.env.OPENAI_API_KEY = 'test-key'
     process.env.AI_MODEL = 'gpt-4o-mini'
     process.env.AI_GATEWAY = 'https://api.test.com'
-    
+
     // Reset all mocks before each test
     vi.clearAllMocks()
   })

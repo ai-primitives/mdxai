@@ -1,127 +1,131 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { execa } from 'execa'
-import path from 'path'
-import { fileURLToPath } from 'url'
+import { cli } from './index.js'
+
+// Save original process properties
+const originalArgv = process.argv
+const originalWrite = process.stdout.write
+const originalErrorWrite = process.stderr.write
+const originalExit = process.exit
 
 // Mock the AI SDK at module level
 vi.mock('@ai-sdk/openai', () => ({
   createOpenAI: vi.fn().mockImplementation(() => ({
     languageModel: vi.fn().mockImplementation((model) => ({
-      doGenerate: vi.fn().mockImplementation((options) => {
-        // Get the actual prompt text and type from the options
-        const promptText = options.prompt[0]?.text || ''
+      doGenerate: vi.fn().mockImplementation(async (options) => {
+        const promptText = options.prompt || ''
         const type = options.type || 'Article'
-        const userPrompt = promptText
 
-        const mdxContent = `---
-$schema: https://mdx.org.ai/schema.json
-$type: ${type}
-model: ${model}
-title: ${type} about ${userPrompt}
-description: Generated ${type.toLowerCase()} content about ${userPrompt}
----
+        // Create frontmatter with required fields in specific order
+        const frontmatter = [
+          '---',
+          `$type: ${type}`,
+          '$schema: https://mdx.org.ai/schema.json',
+          `model: ${model}`,
+          `title: ${type} about ${promptText}`,
+          `description: Generated ${type.toLowerCase()} content about ${promptText}`,
+          '---',
+        ].join('\n')
 
-# ${userPrompt}
+        const content = [
+          '',
+          `# ${promptText}`,
+          '',
+          `This is a generated ${type.toLowerCase()} about ${promptText}.`,
+          '',
+          '## Overview',
+          '',
+          `Detailed information about ${promptText}.`,
+          '',
+          '## Details',
+          '',
+          `More specific details about ${promptText}.`,
+        ].join('\n')
 
-This is a generated ${type.toLowerCase()} about ${userPrompt}.
-
-## Overview
-
-Detailed information about ${userPrompt}.
-
-## Details
-
-More specific details about ${userPrompt}.`
-
-        return Promise.resolve({
-          text: mdxContent,
-          progressMessage: 'Generating MDX\n'
-        })
-      })
-    }))
-  }))
+        return {
+          text: frontmatter + content,
+          progressMessage: 'Generating MDX\n',
+        }
+      }),
+    })),
+  })),
 }))
 
-// Handle ESM __dirname equivalent
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
 describe('CLI', () => {
+  // Create mock functions with proper typing
+  const mockStdoutWrite = vi.fn().mockReturnValue(true)
+  const mockStderrWrite = vi.fn().mockReturnValue(true)
+  const mockExit = vi.fn().mockImplementation((code?: number) => {
+    throw new Error(`Process exited with code ${code}`)
+  })
+
   beforeEach(() => {
     // Set up environment variables for testing
     process.env.OPENAI_API_KEY = 'test-key'
     process.env.AI_MODEL = 'gpt-4o-mini'
-    process.env.AI_GATEWAY = 'https://api.test.com'
-    
+
+    // Mock process.stdout.write and process.stderr.write
+    process.stdout.write = mockStdoutWrite
+    process.stderr.write = mockStderrWrite
+    process.exit = mockExit as unknown as (code?: number) => never
+
     // Reset all mocks before each test
     vi.clearAllMocks()
+    mockStdoutWrite.mockClear()
+    mockStderrWrite.mockClear()
+    mockExit.mockClear()
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    // Restore original process properties
+    process.argv = originalArgv
+    process.stdout.write = originalWrite
+    process.stderr.write = originalErrorWrite
+    process.exit = originalExit
   })
-  const CLI_PATH = path.resolve(__dirname, '../../bin/cli.js')
 
   it('executes mdxai command with prompt', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, 'write a short AI summary'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      all: true,
-      env: {
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        AI_MODEL: process.env.AI_MODEL,
-        AI_GATEWAY: process.env.AI_GATEWAY,
-        NODE_ENV: 'test'
-      }
-    })
+    process.argv = ['node', 'cli.js', 'write a short AI summary']
+    await cli()
 
-    expect(exitCode).toBe(0)
-    expect(stderr).toContain('Generating MDX')
-    expect(stdout).toContain('$schema: https://mdx.org.ai/schema.json')
+    // Check console output
+    expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Generating MDX'))
+    expect(mockStdoutWrite).toHaveBeenCalledWith(expect.stringContaining('$schema: https://mdx.org.ai/schema.json'))
   })
 
   it('uses gpt-4o-mini as default model', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, '--model', 'gpt-4o-mini', 'generate test content'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      all: true,
-      env: {
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        AI_MODEL: process.env.AI_MODEL,
-        AI_GATEWAY: process.env.AI_GATEWAY,
-        NODE_ENV: 'test'
-      }
-    })
+    process.argv = ['node', 'cli.js', '--model', 'gpt-4o-mini', 'generate test content']
+    await cli()
 
-    expect(exitCode).toBe(0)
-    // Avoid strict equality checks for AI output
-    expect(stderr).toContain('Generating MDX')
-    expect(stdout).toContain('gpt-4o-mini')
+    // Check console output
+    expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Generating MDX'))
+    expect(mockStdoutWrite).toHaveBeenCalledWith(expect.stringContaining('model: gpt-4o-mini'))
   })
 
   it('supports custom MDX-LD types', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, '--type', 'BlogPost', 'write a blog post'], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      all: true,
-      env: {
-        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        AI_MODEL: process.env.AI_MODEL,
-        AI_GATEWAY: process.env.AI_GATEWAY,
-        NODE_ENV: 'test'
-      }
-    })
+    process.argv = ['node', 'cli.js', '--type', 'BlogPost', 'write a blog post']
+    await cli()
 
-    expect(exitCode).toBe(0)
-    expect(stderr).toContain('Generating MDX')
-    expect(stdout).toContain('BlogPost')
+    // Check console output
+    expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Generating MDX'))
+    expect(mockStdoutWrite).toHaveBeenCalledWith(expect.stringContaining('$type: BlogPost'))
   })
 
   it('handles errors gracefully', async () => {
-    const { stderr, exitCode } = await execa('node', [CLI_PATH], {
-      reject: false, // Don't throw on non-zero exit codes
-      stdio: ['pipe', 'pipe', 'pipe'],
-      all: true,
-    })
+    // Remove required environment variable to trigger error
+    delete process.env.OPENAI_API_KEY
+    process.argv = ['node', 'cli.js']
 
-    expect(exitCode).not.toBe(0)
-    expect(stderr).toContain('Error')
+    try {
+      await cli()
+      // Should not reach here
+      expect(true).toBe(false)
+    } catch (error: unknown) {
+      expect(error).toBeInstanceOf(Error)
+      if (error instanceof Error) {
+        expect(error.message).toBe('Process exited with code 1')
+      }
+      expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Error'))
+      expect(mockExit).toHaveBeenCalledWith(1)
+    }
   })
 })
