@@ -2,6 +2,7 @@
 
 import { Command } from 'commander'
 import { generateMDX } from '../index.js'
+import { getConfig } from '../config.js'
 
 export async function cli() {
   const program = new Command()
@@ -64,7 +65,11 @@ export async function cli() {
     .option('-d, --depth <depth>', 'Maximum recursion depth for outline generation', '1')
     .action(async (prompt, options) => {
       try {
-        const model = options.model || process.env.AI_MODEL || 'gpt-4o-mini'
+        const config = getConfig({
+          aiConfig: {
+            defaultModel: options.model
+          }
+        })
         const type = options.type || 'Article'
         const recursive = options.recursive || false
         const depth = parseInt(options.depth || '1', 10)
@@ -73,10 +78,16 @@ export async function cli() {
           // Generate content
           const { content } = await generateMDX({
             prompt,
-            model,
+            model: config.aiConfig.defaultModel,
             type,
             recursive,
             depth,
+            onProgress: (progress, message) => {
+              process.stderr.write(`\rGenerating MDX (${progress}% complete) - ${message}`)
+              if (progress === 100) {
+                process.stderr.write('\n')
+              }
+            }
           })
 
           // Write progress message to stderr for immediate feedback

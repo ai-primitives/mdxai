@@ -18,11 +18,23 @@ vi.mock('@ai-sdk/openai', () => ({
         // Create frontmatter with required fields in specific order
         const frontmatter = [
           '---',
-          `$type: ${type}`,
+          `$type: https://schema.org/${type}`,
           '$schema: https://mdx.org.ai/schema.json',
+          `$context: https://schema.org`,
           `model: ${model}`,
           `title: ${type} about ${promptText}`,
           `description: Generated ${type.toLowerCase()} content about ${promptText}`,
+          `'@type': https://schema.org/${type}`,
+          `'@context': https://schema.org`,
+          'metadata:',
+          '  keywords:',
+          `    - ${type.toLowerCase()}`,
+          '    - mdx',
+          '    - content',
+          `  category: ${type}`,
+          '  properties:',
+          '    version: 1.0.0',
+          `    generator: mdxai-${model}`,
           '---',
         ].join('\n')
 

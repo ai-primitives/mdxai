@@ -14,11 +14,23 @@ vi.mock('@ai-sdk/openai', () => ({
         // Create frontmatter with required fields in specific order
         const frontmatter = [
           '---',
-          `$type: ${type}`,
+          `$type: https://schema.org/${type}`,
           '$schema: https://mdx.org.ai/schema.json',
+          `$context: https://schema.org`,
           `model: ${model}`,
           `title: ${type} about ${userPrompt}`,
           `description: Generated ${type.toLowerCase()} content about ${userPrompt}`,
+          `'@type': https://schema.org/${type}`,
+          `'@context': https://schema.org`,
+          'metadata:',
+          '  keywords:',
+          `    - ${type.toLowerCase()}`,
+          '    - mdx',
+          '    - content',
+          `  category: ${type}`,
+          '  properties:',
+          '    version: 1.0.0',
+          `    generator: mdxai-${model}`,
           '---',
         ].join('\n')
 
@@ -87,7 +99,7 @@ describe('generateMDX', () => {
     expect(result.content).toContain('history of AI')
   })
 
-  it('should support custom MDX-LD types', async () => {
+  it('should support custom MDX-LD types with proper schema.org URIs', async () => {
     const options: GenerateOptions = {
       prompt: 'Write a product description',
       type: 'Product',
@@ -95,9 +107,78 @@ describe('generateMDX', () => {
     }
     const result = await generateMDX(options)
 
-    // Verify type in frontmatter
-    expect(result.content).toMatch(/\$type: Product/)
+    // Verify schema.org URIs and both prefix styles
+    expect(result.content).toMatch(/\$type: https:\/\/schema\.org\/Product/)
+    expect(result.content).toMatch(/'@type': https:\/\/schema\.org\/Product/)
+    expect(result.content).toMatch(/\$context: https:\/\/schema\.org/)
+    expect(result.content).toMatch(/'@context': https:\/\/schema\.org/)
+    
+    // Verify nested metadata structure
+    expect(result.content).toMatch(/metadata:/)
+    expect(result.content).toMatch(/keywords:/)
+    expect(result.content).toMatch(/- product/)
+    expect(result.content).toMatch(/properties:/)
+    expect(result.content).toMatch(/version: 1\.0\.0/)
+    
+    // Verify content length and structure
+    expect(result.content.length).toBeGreaterThan(500)
     expect(result.content).toContain('product description')
+  })
+
+  it('should handle complex nested frontmatter properties', async () => {
+    const options: GenerateOptions = {
+      prompt: 'Write about AI technology',
+      type: 'TechArticle',
+      model: 'gpt-4o-mini',
+    }
+    const result = await generateMDX(options)
+
+    // Verify frontmatter structure
+    expect(result.content).toMatch(/metadata:/)
+    expect(result.content).toMatch(/category: TechArticle/)
+    expect(result.content).toMatch(/properties:/)
+    expect(result.content).toMatch(/generator: mdxai-gpt-4o-mini/)
+
+    // Verify content meets minimum length
+    expect(result.content.length).toBeGreaterThan(500)
+
+    // Verify AST parsing and root object properties
+    expect(result.ast).toBeDefined()
+    const ast = result.ast as any
+    expect(ast.data).toBeDefined()
+    expect(ast.data.$type).toBe('https://schema.org/TechArticle')
+    expect(ast.data['@type']).toBe('https://schema.org/TechArticle')
+    expect(ast.data.$context).toBe('https://schema.org')
+    expect(ast.data['@context']).toBe('https://schema.org')
+  })
+
+  it('should validate structural properties and value types', async () => {
+    const options: GenerateOptions = {
+      prompt: 'Test different value types',
+      type: 'Dataset',
+      model: 'gpt-4o-mini',
+    }
+    const result = await generateMDX(options)
+
+    // Verify content structure
+    expect(result.content).toMatch(/^---\n/) // Starts with frontmatter
+    expect(result.content).toMatch(/---\n\n/) // Ends frontmatter correctly
+    expect(result.content).toMatch(/^# /) // Has main heading
+    expect(result.content).toMatch(/## /) // Has subheadings
+
+    // Verify metadata value types
+    expect(result.content).toMatch(/version: 1\.0\.0/) // Number
+    expect(result.content).toMatch(/keywords:\n\s+- /) // Array
+    expect(result.content).toMatch(/properties:\n\s+/) // Object
+
+    // Verify AST parsing
+    expect(result.ast).toBeDefined()
+    const ast = result.ast as any
+    expect(ast.children).toBeInstanceOf(Array)
+    expect(ast.children.length).toBeGreaterThan(0)
+    expect(ast.data.metadata).toBeDefined()
+    expect(Array.isArray(ast.data.metadata.keywords)).toBe(true)
+    expect(typeof ast.data.metadata.properties).toBe('object')
   })
 
   it('should use gpt-4o-mini as default model', async () => {
