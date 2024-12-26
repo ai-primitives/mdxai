@@ -3,6 +3,8 @@ import { parse } from 'mdxld/ast'
 
 import { getConfig, validateConfig, type RuntimeConfig, type AIConfig } from './config.js'
 import type { MDXLDWithAST, ParseOptions } from './types.js'
+import { logger } from './utils/logger.js'
+import { GenerationError, ParsingError } from './utils/errors.js'
 
 // Helper function to initialize AST data
 function initializeASTData(ast: MDXLDWithAST, type: string, selectedModel: string, content: string): MDXLDWithAST {
@@ -138,7 +140,7 @@ Keep the structure flat for depth ${depth}, focusing on main sections only.`
     return JSON.parse(result.text)
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    throw new Error(`Failed to parse outline JSON: ${errorMessage}`)
+    throw new ParsingError(`Failed to parse outline JSON: ${errorMessage}`)
   }
 }
 
@@ -170,7 +172,7 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
           // Cloudflare-specific configuration
           provider: 'cloudflare',
           auth: {
-            token: process.env.CF_WORKERS_AI_TOKEN,
+            token: config.aiConfig.workerToken,
           },
         }
       : {}),
@@ -290,7 +292,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
 
     // Handle potential undefined response
     if (!result.text) {
-      throw new Error('Failed to generate MDX content')
+      throw new GenerationError('Failed to generate MDX content')
     }
 
     // Parse and validate the generated content with AST support
@@ -375,7 +377,7 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
     }
   } catch (error: unknown) {
     // If parsing fails, still return the content but without AST
-    console.error('AST parsing failed:', error instanceof Error ? error.message : String(error))
+    logger.error(`AST parsing failed: ${error instanceof Error ? error.message : String(error)}`)
     emitProgress(100, 'Content generation complete with parsing warning')
     return {
       progressMessage: 'Generated MDX content successfully (AST parsing failed)',
