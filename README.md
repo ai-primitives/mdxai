@@ -38,11 +38,8 @@ mdxai [options] <filepath> <prompt>
 ```
 
 Options:
-- `--type` - Schema type (default: https://schema.org/Article)
-- `--concurrency` - Number of concurrent operations (default: 4)
-- `--max-tokens` - Maximum tokens for generation (default: 100)
+- `--max-tokens` - Maximum tokens for generation (default: no limit)
 - `--model` - Model to use (default: gpt-4o-mini)
-- `--components` - Comma-separated list of components to include
 
 Examples:
 
@@ -50,17 +47,12 @@ Examples:
 # Generate a new blog post
 mdxai blog/future-of-ai.mdx write a blog post about the future of AI
 
-# Edit existing content with increased token limit
-mdxai --max-tokens 2000 blog/future-of-ai.mdx add more real-world examples from recent news
-
-# Process multiple files with custom concurrency
-mdxai --concurrency 4 content/**/* change the voice of the content to be more conversational
-
 # Edit MDX content (.mdx extension is optional)
-mdxai blog/future-of-ai  add more real-world examples from recent news
+mdxai blog/future-of-ai add more real-world examples from recent news
 
-# Use multiple options together
-mdxai --type="https://schema.org/BlogPosting" --max-tokens 200 --model="gpt-4" blog/post.mdx write a detailed technical post
+# Specify a model
+mdxai --model gpt-4o blog/future-of-ai add more real-world examples from recent news
+
 ```
 
 The CLI provides real-time feedback and zero-config operation:
@@ -88,29 +80,4 @@ description: An example article
 # My Example Article
 
 This is an example article.
-```
-
-## SDK Usage
-
-For programmatic usage in browser or edge environments:
-
-```typescript
-import { generateMDX } from 'mdxai'
-
-// Stream MDX generation
-const stream = await generateMDX({
-  type: 'https://schema.org/Article',
-  content: '# My Article',
-  components: ['Button', 'Card'], // Optional JSX components
-})
-
-// Handle streaming output
-stream.on('data', (chunk) => {
-  console.log(chunk) // Process chunks as they arrive
-})
-
-await new Promise((resolve, reject) => {
-  stream.on('end', resolve)
-  stream.on('error', reject)
-})
 ```
