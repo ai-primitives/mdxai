@@ -1,115 +1,135 @@
 #!/usr/bin/env node
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { render } from 'ink'
 import { Box, Text } from 'ink'
 import meow from 'meow'
-import { generateMDX } from './index.js'
+import { generateMDX, GenerateOptions } from './index.js'
 import { glob } from 'glob'
-// Import generateMDX which uses the configured OpenAI client with name parameter
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fs from 'fs/promises'
+import { existsSync } from 'fs'
+import { mkdir, readFile, writeFile } from 'fs/promises'
+import { dirname } from 'path'
 
-interface CliGenerateOptions {
-  type: string
-  filepath?: string
-  instructions?: string
-  maxTokens?: number
-  model?: string
-  components?: string[]
-}
-
-const cli = meow(
-  `
-    Usage
-      $ mdxai <filepath> <instructions...>
-      $ mdxai <command> [options]
-
-    Commands
-      generate    Generate MDX content
-      init       Initialize configuration
-
-    Options
-      --type     Schema type (default: https://schema.org/Article)
-      --concurrency  Number of concurrent operations (default: 4)
-
-    Examples
-      $ mdxai blog/future-of-ai.mdx write a blog post about the future of AI
-      $ mdxai blog/future-of-ai.mdx add more real-world examples from recent news
-      $ mdxai content/**/* change the voice of the content to be more conversational
-      $ mdxai generate ./content --type="https://schema.org/Article"
-`,
-  {
-    importMeta: import.meta,
-    flags: {
-      type: {
-        type: 'string',
-        default: 'https://schema.org/Article',
-      },
-      concurrency: {
-        type: 'number',
-        default: 4,
-      },
-      maxTokens: {
-        type: 'number',
-        default: 100,
-      },
-      model: {
-        type: 'string',
-        default: 'gpt-4o-mini',
-      },
-      components: {
-        type: 'string',
-      },
-    },
-  },
-)
-
-interface ProcessingStatus {
+type ProcessingStatus = {
   total: number
   completed: number
   current: string
-  error?: string
 }
 
+const validateFile = async (filepath: string) => {
+  if (!existsSync(filepath)) {
+    throw new Error(`File not found: ${filepath}`)
+  }
+}
+
+const ensureDirectoryExists = async (filepath: string) => {
+  const dir = dirname(filepath)
+  if (!existsSync(dir)) {
+    await mkdir(dir, { recursive: true })
+  }
+}
+
+const cli = meow(`
+  Usage
+    $ mdxai [options] <file> <prompt>
+    $ mdxai generate [options] <file>
+    $ mdxai init
+
+  Options
+    --type         Schema.org type for the content (default: https://schema.org/Article)
+    --concurrency  Number of files to process concurrently (default: 2)
+    --maxTokens    Maximum number of tokens to generate
+    --model        Model to use for generation
+    --components   Comma-separated list of components to use
+
+  Examples
+    $ mdxai --type="https://schema.org/BlogPosting" blog/future-of-ai.mdx write a blog post about the future of AI
+    $ mdxai --max-tokens 200 blog/future-of-ai.mdx add more real-world examples from recent news
+    $ mdxai --concurrency 4 content/**/* change the voice of the content to be more conversational
+    $ mdxai generate --type="https://schema.org/Article" ./content
+`, {
+  importMeta: import.meta,
+  flags: {
+    type: {
+      type: 'string',
+      default: 'https://schema.org/Article',
+    },
+    concurrency: {
+      type: 'number',
+      default: 2,
+    },
+    maxTokens: {
+      type: 'number',
+    },
+    model: {
+      type: 'string',
+    },
+    components: {
+      type: 'string',
+    },
+  },
+  argv: process.argv.slice(2),
+})
+
 export const App = () => {
-  const [status, setStatus] = useState<ProcessingStatus>({ total: 0, completed: 0, current: 'Processing' })
+  const [status, setStatus] = useState<ProcessingStatus>({ total: 0, completed: 0, current: '' })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleCommand = async () => {
       try {
-        // Split input into command/filepath and remaining args
-        const [firstArg, ...remainingArgs] = cli.input
+        // Handle unknown flags first
+        const unknownFlags = Object.keys(cli.flags).filter(flag => 
+          !['type', 'concurrency', 'maxTokens', 'model', 'components'].includes(flag)
+        )
+        if (unknownFlags.length) {
+          setError(`Unknown option(s): ${unknownFlags.join(', ')}`)
+          return
+        }
 
         // Handle generate command
-        if (firstArg === 'generate' || (!firstArg && cli.flags.type)) {
-          setStatus((prev) => ({ ...prev, current: 'Processing' }))
-          await generateMDX({
-            type: cli.flags.type,
-            maxTokens: cli.flags.maxTokens || 100,
-            model: 'gpt-4o-mini',
-            components: typeof cli.flags.components === 'string' ? cli.flags.components.split(',') : undefined,
-          } as CliGenerateOptions)
-          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+        if (cli.input[0] === 'generate') {
+          if (!cli.input[1]) {
+            setError('Output file is required for generate command')
+            return
+          }
+
+          const outputFile = cli.input[1]
+          try {
+            await ensureDirectoryExists(dirname(outputFile))
+            setStatus(prev => ({ ...prev, current: 'Processing' }))
+            
+            const result = await generateMDX({
+              type: cli.flags.type,
+              filepath: outputFile,
+              maxTokens: cli.flags.maxTokens,
+              model: cli.flags.model,
+              components: cli.flags.components?.split(','),
+            })
+            
+            await writeFile(outputFile, result.text)
+            setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to generate content')
+          }
           return
         }
 
         // Handle init command
-        if (firstArg === 'init') {
-          setStatus((prev) => ({ ...prev, current: 'Processing' }))
-          // TODO: Implement init logic
-          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+        if (cli.input[0] === 'init') {
+          setError('Init command not implemented yet')
           return
         }
 
-        // Handle direct filepath + instructions pattern
-        if (firstArg && !firstArg.startsWith('-')) {
-          const filepath = firstArg
-          // Join all remaining args as the instructions
-          const instructions = remainingArgs.join(' ')
+        // Handle direct filepath + prompt pattern
+        if (cli.input[0]) {
+          const filepath = cli.input[0]
+          const prompt = cli.input.slice(1).join(' ')
 
-          if (!instructions) {
-            setError('Instructions are required when processing files')
+          if (!prompt) {
+            setError('Prompt is required when processing files')
             return
           }
 
@@ -121,54 +141,96 @@ export const App = () => {
               return
             }
 
-            setStatus((prev) => ({ ...prev, total: files.length, current: 'Processing multiple files' }))
+            try {
+              setStatus(prev => ({ ...prev, total: files.length, current: 'Processing multiple files' }))
 
-            // Process files concurrently with limit
-            const chunks: string[][] = []
-            for (let i = 0; i < files.length; i += cli.flags.concurrency) {
-              chunks.push(files.slice(i, i + cli.flags.concurrency))
-            }
+              // Process files concurrently with limit
+              const chunks: string[][] = []
+              for (let i = 0; i < files.length; i += cli.flags.concurrency) {
+                chunks.push(files.slice(i, i + cli.flags.concurrency))
+              }
 
-            for (const chunk of chunks) {
-              await Promise.all(
-                chunk.map(async (file: string) => {
-                  setStatus((prev) => ({ ...prev, current: `Processing ${file}` }))
-                  await generateMDX({
-                    type: cli.flags.type,
-                    filepath: file,
-                    instructions,
-                    maxTokens: cli.flags.maxTokens || 100,
-                    model: 'gpt-4o-mini',
-                  } as CliGenerateOptions)
-                  setStatus((prev) => ({
-                    ...prev,
-                    completed: prev.completed + 1,
-                    current: `Completed ${prev.completed + 1}/${prev.total} files`,
-                  }))
-                }),
-              )
+              for (const chunk of chunks) {
+                await Promise.all(
+                  chunk.map(async (file: string) => {
+                    try {
+                      if (!existsSync(file)) {
+                        throw new Error(`File not found: ${file}`)
+                      }
+
+                      setStatus(prev => ({ ...prev, current: `Processing ${file}` }))
+                      
+                      const content = await readFile(file, 'utf-8')
+                      const result = await generateMDX({
+                        type: cli.flags.type,
+                        filepath: file,
+                        instructions: prompt,
+                        maxTokens: cli.flags.maxTokens,
+                        model: cli.flags.model,
+                        content,
+                      })
+                      
+                      await writeFile(file, result.text)
+                      
+                      setStatus(prev => ({
+                        ...prev,
+                        completed: prev.completed + 1,
+                        current: `Completed ${prev.completed + 1}/${prev.total} files`,
+                      }))
+                    } catch (err) {
+                      if (err instanceof Error && err.message.includes('ENOENT')) {
+                        setError(`File not found: ${file}`)
+                      } else {
+                        setError(err instanceof Error ? err.message : `Failed to process file: ${file}`)
+                      }
+                    }
+                  }),
+                )
+              }
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Failed to process files')
             }
             return
           }
 
           // Handle single file
-          setStatus((prev) => ({ ...prev, current: `Processing ${filepath}` }))
-          await generateMDX({
-            type: cli.flags.type,
-            filepath,
-            instructions,
-            maxTokens: cli.flags.maxTokens || 100,
-            model: 'gpt-4o-mini',
-          } as CliGenerateOptions)
-          setStatus((prev) => ({ ...prev, current: 'Generation complete!' }))
+          try {
+            // For new files, ensure directory exists
+            await ensureDirectoryExists(dirname(filepath))
+            setStatus(prev => ({ ...prev, current: `Processing ${filepath}` }))
+            
+            let content = ''
+            if (existsSync(filepath)) {
+              content = await readFile(filepath, 'utf-8')
+            }
+
+            const result = await generateMDX({
+              type: cli.flags.type,
+              filepath,
+              instructions: prompt,
+              maxTokens: cli.flags.maxTokens,
+              model: cli.flags.model,
+              content,
+            })
+            
+            await writeFile(filepath, result.text)
+            
+            setStatus(prev => ({ ...prev, current: 'Generation complete!' }))
+          } catch (err) {
+            if (err instanceof Error && err.message.includes('ENOENT')) {
+              setError(`File not found: ${filepath}`)
+            } else {
+              setError(err instanceof Error ? err.message : 'Failed to process file')
+            }
+          }
           return
         }
 
-        // Handle unknown command
-        if (firstArg) {
-          setError('Unknown command. Run mdxai --help for usage information.')
-        } else {
+        // Handle unknown command or no command
+        if (cli.input.length === 0) {
           setError('No command provided. Run mdxai --help for usage information.')
+        } else {
+          setError(`Unknown command: ${cli.input[0]}. Run mdxai --help for usage information.`)
         }
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred')
@@ -178,18 +240,20 @@ export const App = () => {
     handleCommand()
   }, [])
 
+  if (error) {
+    return (
+      <Box flexDirection='column'>
+        <Text color='red'>{error}</Text>
+      </Box>
+    )
+  }
+
   return (
     <Box flexDirection='column'>
-      {error ? (
-        <Text color='red'>{error}</Text>
-      ) : (
-        <Box>
-          <Text>
-            {status.current}
-            {status.total > 0 && ` (${status.completed}/${status.total})`}
-          </Text>
-        </Box>
-      )}
+      <Text>
+        {status.current || 'Processing...'}
+        {status.total > 0 && ` (${status.completed}/${status.total})`}
+      </Text>
     </Box>
   )
 }
