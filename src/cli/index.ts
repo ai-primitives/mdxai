@@ -66,7 +66,7 @@ export async function cli() {
         
         try {
           // Generate content
-          const { progressMessage, content } = await generateMDX({
+          const { content } = await generateMDX({
             prompt,
             model,
             type
@@ -76,11 +76,11 @@ export async function cli() {
           writeToStderr('Generating MDX')
           // Write content to stdout for piping
           process.stdout.write(content)
-        } catch (err) {
+        } catch {
           writeToStderr(formatError('Failed to generate MDX content'))
           process.exit(1)
         }
-      } catch (error: unknown) {
+      } catch {
         writeToStderr(formatError('Invalid input'))
         process.exit(1)
       }
@@ -88,7 +88,7 @@ export async function cli() {
 
   try {
     await program.parseAsync(process.argv)
-  } catch (error) {
+  } catch {
     process.exit(1)
   }
 }
