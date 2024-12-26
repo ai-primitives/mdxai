@@ -1,20 +1,65 @@
 import { createOpenAI } from '@ai-sdk/openai'
 import { parse } from 'mdxld/ast'
 
-// Default model can be overridden by AI_MODEL env var
-const DEFAULT_MODEL = 'gpt-4o-mini'
+import { getConfig, validateConfig, type RuntimeConfig, type AIConfig } from './config.js'
+import type { MDXLDWithAST, ParseOptions } from './types.js'
+
+// Helper function to initialize AST data
+function initializeASTData(ast: MDXLDWithAST, type: string, selectedModel: string, content: string): MDXLDWithAST {
+  // Set root type
+  ast.type = 'root'
+
+  // Initialize AST data with proper schema.org URIs
+  const baseData = {
+    $type: `https://schema.org/${type}`,
+    '@type': `https://schema.org/${type}`,
+    $context: 'https://schema.org',
+    '@context': 'https://schema.org',
+    metadata: {
+      keywords: [type.toLowerCase(), 'mdx', 'content'],
+      category: type,
+      properties: {
+        version: '1.0.0',
+        generator: `mdxai-${selectedModel}`,
+      },
+    },
+  }
+
+  // Merge with existing data if present
+  ast.data = ast.data ? { ...ast.data, ...baseData } : baseData
+
+  // Parse content and ensure children array is populated
+  if (!content) {
+    ast.children = []
+  } else {
+    const parsedContent = parse(content, parseOptions) as unknown as MDXLDWithAST
+    if (parsedContent.children && parsedContent.children.length > 0) {
+      ast.children = parsedContent.children
+    } else {
+      // If no children found in parsed content, create a text node
+      ast.children = [
+        {
+          type: 'text',
+          value: content,
+        },
+      ]
+    }
+  }
+
+  return ast
+}
 
 // MDX parsing options
-const parseOptions = {
+const parseOptions: ParseOptions = {
   ast: true, // Enable AST parsing for executable code and UI components
   allowAtPrefix: true, // Allow both $ and @ prefixes for compatibility
 }
 
-// Create OpenAI provider with current environment configuration
-function createProvider() {
+// Create OpenAI provider with runtime configuration
+function createProvider(config: RuntimeConfig) {
   return createOpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-    baseURL: process.env.AI_GATEWAY,
+    apiKey: config.aiConfig.apiKey,
+    baseURL: config.aiConfig.baseURL,
     compatibility: 'compatible', // For third-party providers
   })
 }
@@ -27,10 +72,12 @@ export interface OutlineItem {
 
 export interface GenerateOptions {
   prompt: string
-  model?: string // default to gpt-4o-mini
+  model?: string // Optional model override
   type?: string // MDX-LD type from supported namespaces
   recursive?: boolean // Enable recursive generation
   depth?: number // Maximum recursion depth
+  onProgress?: ProgressCallback // Optional progress callback
+  aiConfig?: Partial<AIConfig> // Optional AI configuration override
 }
 
 export interface GenerateResult {
@@ -38,20 +85,30 @@ export interface GenerateResult {
   progressMessage: string
   ast?: object // Optional AST representation for tooling
   outline?: OutlineItem[] // Generated outline for recursive content
+  progress?: number // Progress percentage (0-100)
 }
+
+export type ProgressCallback = (progress: number, message: string) => void
 
 /**
  * Generates MDX content using AI
  * @param options Configuration options for MDX generation
  * @returns Promise resolving to generated MDX content and progress message
  */
-async function generateOutline(prompt: string, type: string, model: string, depth: number = 1): Promise<OutlineItem[]> {
+async function generateOutline(prompt: string, type: string, model: string | undefined, depth: number = 1): Promise<OutlineItem[]> {
   const outlinePrompt = `Generate a structured outline for ${type} content about: ${prompt}
 Include title and brief description for each section. Format as a JSON array of objects with 'title' and 'description' fields.
 Keep the structure flat for depth ${depth}, focusing on main sections only.`
 
-  const provider = createProvider()
-  const languageModel = provider.languageModel(model.startsWith('@cf/') ? model : DEFAULT_MODEL, {
+  const config = getConfig({
+    aiConfig: { defaultModel: model },
+  })
+  validateConfig(config)
+
+  const provider = createProvider(config)
+  let selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
+  selectedModel = selectedModel || 'gpt-4o-mini'
+  const languageModel = provider.languageModel(selectedModel, {
     structuredOutputs: true,
   })
 
@@ -86,17 +143,29 @@ Keep the structure flat for depth ${depth}, focusing on main sections only.`
 }
 
 export async function generateMDX(options: GenerateOptions): Promise<GenerateResult> {
-  const { prompt, model = process.env.AI_MODEL || DEFAULT_MODEL, type = 'Article', recursive = false, depth = 1 } = options
+  const { prompt, model, type = 'Article', recursive = false, depth = 1, onProgress, aiConfig } = options
 
-  // Ensure AI provider is properly configured
-  if (!process.env.OPENAI_API_KEY && !process.env.AI_GATEWAY) {
-    throw new Error('No AI provider configuration found. Set OPENAI_API_KEY or AI_GATEWAY environment variable.')
+  const config = getConfig({
+    aiConfig: {
+      ...aiConfig,
+      defaultModel: model,
+    },
+    onProgress,
+  })
+  validateConfig(config)
+
+  const emitProgress = (progress: number, message: string) => {
+    if (config.onProgress) {
+      config.onProgress(progress, message)
+    }
   }
+
+  emitProgress(10, 'Initializing content generation')
 
   // Configure language model based on environment and model type
   const modelConfig = {
     structuredOutputs: true, // Enable structured data generation
-    ...(model.startsWith('@cf/')
+    ...(model && model.startsWith('@cf/')
       ? {
           // Cloudflare-specific configuration
           provider: 'cloudflare',
@@ -107,14 +176,17 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
       : {}),
   }
 
-  const provider = createProvider()
-  const languageModel = provider.languageModel(model.startsWith('@cf/') ? model : DEFAULT_MODEL, modelConfig)
+  const provider = createProvider(config)
+  let selectedModel = model && model.startsWith('@cf/') ? model : config.aiConfig.defaultModel
+  selectedModel = selectedModel || 'gpt-4o-mini'
+  const languageModel = provider.languageModel(selectedModel, modelConfig)
 
   let mdxContent: string | undefined
   let outline: OutlineItem[] | undefined
 
   if (recursive) {
     // Generate outline first in recursive mode
+    emitProgress(20, 'Generating content outline')
     outline = await generateOutline(prompt, type, model, depth)
 
     if (outline) {
@@ -135,6 +207,7 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
 
   // Generate content if not already generated through recursion
   if (!mdxContent) {
+    emitProgress(40, 'Preparing content generation')
     // Generate structured content using AI
     const systemPrompt = `You are an expert content writer specializing in MDX with structured data.
 Generate MDX content for the following prompt, ensuring to:
@@ -187,6 +260,7 @@ The content must be valid MDX that can be parsed by mdxld/ast and must follow MD
 Always use proper code block syntax with language tags for executable code.
 Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
 
+    emitProgress(60, 'Generating content with AI model')
     const result = await languageModel.doGenerate({
       inputFormat: 'messages',
       mode: {
@@ -221,14 +295,27 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
 
     // Parse and validate the generated content with AST support
     try {
+      emitProgress(80, 'Creating frontmatter and formatting content')
       // Create frontmatter with required fields in specific order
       const frontmatter = [
         '---',
-        `$type: ${type}`,
+        `$type: https://schema.org/${type}`,
         '$schema: https://mdx.org.ai/schema.json',
-        `model: ${model}`,
+        `$context: https://schema.org`,
+        `model: ${selectedModel}`,
         `title: ${type} about ${prompt}`,
         `description: Generated ${type.toLowerCase()} content about ${prompt}`,
+        `'@type': https://schema.org/${type}`,
+        `'@context': https://schema.org`,
+        'metadata:',
+        '  keywords:',
+        `    - ${type.toLowerCase()}`,
+        '    - mdx',
+        '    - content',
+        `  category: ${type}`,
+        '  properties:',
+        '    version: 1.0.0',
+        `    generator: mdxai-${selectedModel}`,
         '---',
       ].join('\n')
 
@@ -248,8 +335,8 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
         `More specific details about ${prompt}.`,
       ].join('\n')
 
-      // Combine frontmatter and content
-      mdxContent = frontmatter + content
+      // Add frontmatter first, then content
+      mdxContent = `${frontmatter}\n${content}`
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       throw new Error(`Failed to parse generated MDX content: ${errorMessage}`)
@@ -259,12 +346,15 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
     if (!mdxContent) {
       throw new Error('No MDX content generated')
     }
-    const contentAst = parse(mdxContent, parseOptions)
+    const contentAst = initializeASTData(parse(mdxContent, parseOptions) as unknown as MDXLDWithAST, type, selectedModel, mdxContent)
+
+    emitProgress(100, 'Content generation complete')
     return {
       progressMessage: 'Generating MDX\n',
       content: mdxContent,
-      ast: contentAst.ast,
+      ast: contentAst,
       outline,
+      progress: 100,
     }
   }
 
@@ -273,21 +363,26 @@ Ensure all JSX/MDX syntax is valid and can be parsed by the MDX compiler.`
     throw new Error('No MDX content generated')
   }
   try {
-    const finalParsed = parse(mdxContent, parseOptions)
+    const finalParsed = initializeASTData(parse(mdxContent, parseOptions) as unknown as MDXLDWithAST, type, selectedModel, mdxContent)
+
+    emitProgress(100, 'Content generation complete')
     return {
       progressMessage: 'Generating MDX\n',
       content: mdxContent,
-      ast: finalParsed.ast,
+      ast: finalParsed,
       outline: undefined,
+      progress: 100,
     }
   } catch (error: unknown) {
     // If parsing fails, still return the content but without AST
     console.error('AST parsing failed:', error instanceof Error ? error.message : String(error))
+    emitProgress(100, 'Content generation complete with parsing warning')
     return {
-      progressMessage: 'Generating MDX\n',
+      progressMessage: 'Generated MDX content successfully (AST parsing failed)',
       content: mdxContent,
       ast: undefined,
       outline: undefined,
+      progress: 100,
     }
   }
 }
