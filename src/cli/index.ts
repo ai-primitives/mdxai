@@ -15,7 +15,10 @@ export async function cli() {
   // Configure error handling
   const formatError = (msg: string): string => {
     if (!msg) return ''
-    const cleaned = msg.trim().replace(/^error:\s*/i, '').replace(/^Error:\s*/i, '')
+    const cleaned = msg
+      .trim()
+      .replace(/^error:\s*/i, '')
+      .replace(/^Error:\s*/i, '')
     return `Error: ${cleaned.charAt(0).toUpperCase() + cleaned.slice(1)}`
   }
 
@@ -29,7 +32,7 @@ export async function cli() {
   program.configureHelp({
     helpWidth: 80,
     sortSubcommands: true,
-    sortOptions: true
+    sortOptions: true,
   })
 
   // Configure Commander output
@@ -41,14 +44,12 @@ export async function cli() {
       } else {
         writeToStderr(str)
       }
-    }
+    },
   })
 
   // Handle all errors consistently
   program.exitOverride((err: Error & { code?: string }) => {
-    const errorMessage = err.code === 'commander.missingArgument'
-      ? formatError('Missing required argument \'prompt\'')
-      : formatError(err.message)
+    const errorMessage = err.code === 'commander.missingArgument' ? formatError("Missing required argument 'prompt'") : formatError(err.message)
     writeToStderr(errorMessage)
     process.exit(1)
   })
@@ -67,7 +68,7 @@ export async function cli() {
         const type = options.type || 'Article'
         const recursive = options.recursive || false
         const depth = parseInt(options.depth || '1', 10)
-        
+
         try {
           // Generate content
           const { content, progressMessage } = await generateMDX({
@@ -75,12 +76,12 @@ export async function cli() {
             model,
             type,
             recursive,
-            depth
+            depth,
           })
-          
+
           // Write progress message to stderr for immediate feedback
           writeToStderr(progressMessage)
-          
+
           // Write progress message to stderr for immediate feedback
           writeToStderr('Generating MDX')
           // Write content to stdout for piping
