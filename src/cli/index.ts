@@ -3,6 +3,31 @@
 import { Command } from 'commander'
 import { generateMDX } from '../index.js'
 import { getConfig } from '../config.js'
+import { ConfigurationError, GenerationError, ParsingError, formatError as formatErrorUtil } from '../utils/errors.js'
+import { logger } from '../utils/logger.js'
+import { readFile, writeFile } from '../utils/fs.js'
+
+// CLI-specific utilities
+// This function is used internally by the CLI
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const readInput = async (path?: string): Promise<string> => {
+  if (!path) {
+    return new Promise((resolve) => {
+      let data = ''
+      process.stdin.on('data', (chunk) => (data += chunk))
+      process.stdin.on('end', () => resolve(data))
+    })
+  }
+  return readFile(path)
+}
+
+const writeOutput = async (content: string, path?: string): Promise<void> => {
+  if (!path) {
+    process.stdout.write(content)
+    return
+  }
+  await writeFile(path, content)
+}
 
 export async function cli() {
   const program = new Command()
@@ -14,7 +39,14 @@ export async function cli() {
   program.showHelpAfterError(false)
 
   // Configure error handling
-  const formatError = (msg: string): string => {
+  const formatError = (error: unknown): string => {
+    if (error instanceof ConfigurationError || error instanceof GenerationError || error instanceof ParsingError) {
+      return formatErrorUtil(error)
+    }
+    if (error instanceof Error) {
+      return `Error: ${error.message}`
+    }
+    const msg = String(error)
     if (!msg) return ''
     const cleaned = msg
       .trim()
@@ -23,9 +55,9 @@ export async function cli() {
     return `Error: ${cleaned.charAt(0).toUpperCase() + cleaned.slice(1)}`
   }
 
-  // Configure output handling
+  // Configure output handling using logger
   const writeToStderr = (msg: string): void => {
-    process.stderr.write(msg + '\n')
+    logger.error(msg)
   }
 
   // Disable built-in error handling
@@ -93,13 +125,20 @@ export async function cli() {
           // Write progress message to stderr for immediate feedback
           writeToStderr('Generating MDX\n')
 
-          // Write content to stdout for piping
-          process.stdout.write(content + '\n')
+          // Write content using fs utility
+          await writeOutput(content + '\n')
         } catch (error) {
-          // Write detailed error to stderr for debugging
-          const errorMessage =
-            error instanceof Error ? `Failed to generate MDX content: ${error.message}\nStack: ${error.stack}` : 'Failed to generate MDX content: Unknown error'
-          writeToStderr(formatError(errorMessage))
+          // Handle specific error types
+          if (error instanceof ConfigurationError || error instanceof GenerationError || error instanceof ParsingError) {
+            writeToStderr(formatError(error))
+          } else {
+            // Write detailed error to stderr for debugging
+            const errorMessage =
+              error instanceof Error
+                ? `Failed to generate MDX content: ${error.message}\nStack: ${error.stack}`
+                : 'Failed to generate MDX content: Unknown error'
+            writeToStderr(formatError(errorMessage))
+          }
           process.exit(1)
         }
       } catch {
