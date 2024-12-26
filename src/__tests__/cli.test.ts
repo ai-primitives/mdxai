@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { readFile } from '../utils/fs.js'
 import { cli } from '../cli/index.js'
 
@@ -10,8 +10,17 @@ vi.mock('../utils/fs.js', () => ({
 }))
 
 describe('CLI', () => {
+  const originalExit = process.exit
+  const originalArgv = process.argv
+
   beforeEach(() => {
     vi.clearAllMocks()
+    process.exit = vi.fn() as never
+  })
+
+  afterEach(() => {
+    process.exit = originalExit
+    process.argv = originalArgv
   })
 
   it('should handle file input/output operations', async () => {
@@ -27,9 +36,17 @@ describe('CLI', () => {
     await cli()
 
     expect(stdoutSpy).toHaveBeenCalled()
-    expect(stdoutSpy).toHaveBeenCalled()
+    expect(stderrSpy).toHaveBeenCalled()
+    expect(process.exit).not.toHaveBeenCalled()
 
     stdoutSpy.mockRestore()
     stderrSpy.mockRestore()
+  })
+
+  it('should handle missing arguments correctly', async () => {
+    process.argv = ['node', 'cli']
+    await cli()
+
+    expect(process.exit).toHaveBeenCalledWith(1)
   })
 })
