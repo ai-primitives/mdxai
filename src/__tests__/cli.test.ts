@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { readFile } from '../utils/fs.js'
 import { cli } from '../cli/index.js'
+import { generateMDX } from '../index.js'
+import { GenerationError } from '../utils/errors.js'
 
 vi.mock('../utils/fs.js', () => ({
   readFile: vi.fn(),
   writeFile: vi.fn(),
   exists: vi.fn(),
   resolvePath: vi.fn(),
+}))
+
+vi.mock('../index.js', () => ({
+  generateMDX: vi.fn(),
 }))
 
 describe('CLI', () => {
@@ -23,16 +28,20 @@ describe('CLI', () => {
     process.argv = originalArgv
   })
 
-  it('should handle file input/output operations', async () => {
-    const mockContent = 'test content'
-    vi.mocked(readFile).mockResolvedValue(mockContent)
+  it('should handle successful MDX generation', async () => {
+    // Configure mock for successful generation
+    vi.mocked(generateMDX).mockResolvedValueOnce({
+      content: 'Generated MDX content',
+      progressMessage: 'Content generation completed',
+      progress: 100,
+    })
 
     // Test file operations
     const stdoutSpy = vi.spyOn(process.stdout, 'write')
     const stderrSpy = vi.spyOn(process.stderr, 'write')
 
-    // Run CLI with mock input
-    process.argv = ['node', 'cli', 'test prompt']
+    // Run CLI with valid prompt and type
+    process.argv = ['node', 'cli', 'Generate a test article', '--type', 'Article']
     await cli()
 
     expect(stdoutSpy).toHaveBeenCalled()
@@ -47,6 +56,15 @@ describe('CLI', () => {
     process.argv = ['node', 'cli']
     await cli()
 
+    expect(process.exit).toHaveBeenCalledWith(1)
+  })
+
+  it('should handle generation errors', async () => {
+    // Configure mock for failed generation
+    vi.mocked(generateMDX).mockRejectedValueOnce(new GenerationError('Generation failed'))
+
+    process.argv = ['node', 'cli', 'Generate content', '--type', 'Article']
+    await cli()
     expect(process.exit).toHaveBeenCalledWith(1)
   })
 })
