@@ -80,14 +80,16 @@ export async function cli() {
           })
 
           // Write progress message to stderr for immediate feedback
-          writeToStderr(progressMessage)
-
-          // Write progress message to stderr for immediate feedback
-          writeToStderr('Generating MDX')
+          writeToStderr('Generating MDX\n')
+          
           // Write content to stdout for piping
-          process.stdout.write(content)
-        } catch {
-          writeToStderr(formatError('Failed to generate MDX content'))
+          process.stdout.write(content + '\n')
+        } catch (error) {
+          // Write detailed error to stderr for debugging
+          const errorMessage = error instanceof Error 
+            ? `Failed to generate MDX content: ${error.message}\nStack: ${error.stack}`
+            : 'Failed to generate MDX content: Unknown error'
+          writeToStderr(formatError(errorMessage))
           process.exit(1)
         }
       } catch {

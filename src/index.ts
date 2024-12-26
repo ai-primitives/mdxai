@@ -10,12 +10,14 @@ const parseOptions = {
   allowAtPrefix: true, // Allow both $ and @ prefixes for compatibility
 }
 
-// Create OpenAI provider with environment-based configuration
-const provider = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.AI_GATEWAY,
-  compatibility: 'compatible', // For third-party providers
-})
+// Create OpenAI provider with current environment configuration
+function createProvider() {
+  return createOpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.AI_GATEWAY,
+    compatibility: 'compatible', // For third-party providers
+  })
+}
 
 export interface OutlineItem {
   title: string
@@ -48,6 +50,7 @@ async function generateOutline(prompt: string, type: string, model: string, dept
 Include title and brief description for each section. Format as a JSON array of objects with 'title' and 'description' fields.
 Keep the structure flat for depth ${depth}, focusing on main sections only.`
 
+  const provider = createProvider()
   const languageModel = provider.languageModel(model.startsWith('@cf/') ? model : DEFAULT_MODEL, {
     structuredOutputs: true,
   })
@@ -85,6 +88,11 @@ Keep the structure flat for depth ${depth}, focusing on main sections only.`
 export async function generateMDX(options: GenerateOptions): Promise<GenerateResult> {
   const { prompt, model = process.env.AI_MODEL || DEFAULT_MODEL, type = 'Article', recursive = false, depth = 1 } = options
 
+  // Ensure AI provider is properly configured
+  if (!process.env.OPENAI_API_KEY && !process.env.AI_GATEWAY) {
+    throw new Error('No AI provider configuration found. Set OPENAI_API_KEY or AI_GATEWAY environment variable.')
+  }
+
   // Configure language model based on environment and model type
   const modelConfig = {
     structuredOutputs: true, // Enable structured data generation
@@ -99,6 +107,7 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
       : {}),
   }
 
+  const provider = createProvider()
   const languageModel = provider.languageModel(model.startsWith('@cf/') ? model : DEFAULT_MODEL, modelConfig)
 
   let mdxContent: string | undefined
@@ -110,7 +119,7 @@ export async function generateMDX(options: GenerateOptions): Promise<GenerateRes
 
     if (outline) {
       // Generate content based on outline
-      const outlineText = outline.map((item) => `${item.title}\n${item.description || ''}`).join('\n\n')
+      const outlineText = outline?.map((item) => `${item.title}\n${item.description || ''}`).join('\n\n') || ''
       const contentPrompt = `Generate detailed MDX content following this outline:\n\n${outlineText}`
 
       const recursiveResult = await generateMDX({
@@ -225,41 +234,83 @@ model: ${model}
 
 ${generatedText}`
 
-      // Parse with AST support to validate MDX structure
-      const parsed = parse(rawContent, parseOptions)
-
-      // Stringify back to MDX, preserving AST structure
-      mdxContent = stringify(parsed, { useAtPrefix: false })
+      // Handle frontmatter before parsing
+      let lines = rawContent.split('\n')
+      let frontmatterStart = lines.findIndex(line => line.trim() === '---')
+      let frontmatterEnd = lines.findIndex((line, index) => index > frontmatterStart && line.trim() === '---')
+      
+      // If no frontmatter exists, create it
+      if (frontmatterStart === -1) {
+        lines = ['---', '', '---', '', ...lines]
+        frontmatterStart = 0
+        frontmatterEnd = 2
+      }
+      
+      // Extract content (everything after frontmatter)
+      const content = lines.slice(frontmatterEnd + 1)
+      
+      // Create frontmatter with required fields in specific order
+      const frontmatter = [
+        '---',
+        `$type: ${type}`,
+        `$schema: https://mdx.org.ai/schema.json`,
+        `model: ${model}`
+      ]
+      
+      // Add any existing frontmatter fields that aren't our required fields
+      const existingFrontmatter = lines.slice(frontmatterStart + 1, frontmatterEnd)
+      const requiredPrefixes = ['$type:', '$schema:', 'model:']
+      existingFrontmatter.forEach(line => {
+        const trimmedLine = line.trim()
+        if (trimmedLine && !requiredPrefixes.some(prefix => trimmedLine.startsWith(prefix))) {
+          frontmatter.push(line)
+        }
+      })
+      
+      frontmatter.push('---')
+      
+      // Combine frontmatter and content without parsing/stringifying
+      mdxContent = [...frontmatter, '', ...content].join('\n')
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       throw new Error(`Failed to parse generated MDX content: ${errorMessage}`)
     }
 
-    // Parse one final time to get AST for tooling
+    // Parse and validate the final content
     if (!mdxContent) {
-      throw new Error('Failed to generate MDX content')
+      throw new Error('No MDX content generated')
     }
+    const contentAst = parse(mdxContent, parseOptions)
+    return {
+      progressMessage: 'Generating MDX\n',
+      content: mdxContent,
+      ast: contentAst.ast,
+      outline
+    }
+  }
 
+  // Parse at the end just to get AST, but use the raw content for output
+  if (!mdxContent) {
+    throw new Error('No MDX content generated')
+  }
+  try {
     const finalParsed = parse(mdxContent, parseOptions)
-
-    const generatedResult: GenerateResult = {
-      progressMessage: recursive ? 'Generated outline and MDX content\n' : 'Generated MDX content\n',
+    return {
+      progressMessage: 'Generating MDX\n',
       content: mdxContent,
       ast: finalParsed.ast,
-      outline,
+      outline: undefined
     }
-    return generatedResult
+  } catch (error: unknown) {
+    // If parsing fails, still return the content but without AST
+    console.error('AST parsing failed:', error instanceof Error ? error.message : String(error))
+    return {
+      progressMessage: 'Generating MDX\n',
+      content: mdxContent,
+      ast: undefined,
+      outline: undefined
+    }
   }
-
-  // Parse content for non-recursive path
-  const nonRecursiveParsed = parse(mdxContent, parseOptions)
-  const nonRecursiveResult: GenerateResult = {
-    progressMessage: 'Generated MDX content\n',
-    content: mdxContent,
-    ast: nonRecursiveParsed.ast,
-    outline: undefined,
-  }
-  return nonRecursiveResult
 }
 
 // Re-export CLI functionality once implemented

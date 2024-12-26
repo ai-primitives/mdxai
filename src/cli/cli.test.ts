@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { execa } from 'execa'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -8,12 +8,24 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 describe('CLI', () => {
+  beforeEach(() => {
+    // Set up environment variables for testing
+    process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || 'test-key'
+    process.env.AI_MODEL = 'gpt-4o-mini'
+    process.env.AI_GATEWAY = process.env.AI_GATEWAY || 'https://api.test.com'
+  })
   const CLI_PATH = path.resolve(__dirname, '../../bin/cli.js')
 
   it('executes mdxai command with prompt', async () => {
     const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, 'write a short AI summary'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       all: true,
+      env: {
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        AI_MODEL: process.env.AI_MODEL,
+        AI_GATEWAY: process.env.AI_GATEWAY,
+        NODE_ENV: 'test'
+      }
     })
 
     expect(exitCode).toBe(0)
@@ -25,6 +37,12 @@ describe('CLI', () => {
     const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, '--model', 'gpt-4o-mini', 'generate test content'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       all: true,
+      env: {
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        AI_MODEL: process.env.AI_MODEL,
+        AI_GATEWAY: process.env.AI_GATEWAY,
+        NODE_ENV: 'test'
+      }
     })
 
     expect(exitCode).toBe(0)
@@ -37,6 +55,12 @@ describe('CLI', () => {
     const { stdout, stderr, exitCode } = await execa('node', [CLI_PATH, '--type', 'BlogPost', 'write a blog post'], {
       stdio: ['pipe', 'pipe', 'pipe'],
       all: true,
+      env: {
+        OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        AI_MODEL: process.env.AI_MODEL,
+        AI_GATEWAY: process.env.AI_GATEWAY,
+        NODE_ENV: 'test'
+      }
     })
 
     expect(exitCode).toBe(0)

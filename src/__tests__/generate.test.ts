@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { generateMDX, GenerateOptions } from '../index.js'
 
 describe('generateMDX', () => {
+  beforeEach(() => {
+    // Set up environment variables for testing
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OPENAI_API_KEY environment variable must be set for tests')
+    }
+    process.env.AI_MODEL = 'gpt-4o-mini'
+    process.env.AI_GATEWAY = process.env.AI_GATEWAY || 'https://api.test.com'
+  })
   it('should generate MDX content with proper frontmatter', async () => {
     const options: GenerateOptions = {
       prompt: 'Write about the history of AI',
