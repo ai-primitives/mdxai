@@ -44,9 +44,8 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.0.10",
     "@ai-sdk/openai-compatible": "^0.0.9",
-    "@ai-sdk/provider": "^1.0.2",
     "@mdx-js/mdx": "^3.1.0",
-    "ai": "^4.0.20",
+    "ai": "^4.0.22",
     "ai-functions": "^0.3.0",
     "commander": "^12.1.0",
     "conf": "^13.1.0",
@@ -59,10 +58,15 @@
     "mdxld": "^1.0.1",
     "meow": "^13.2.0",
     "p-queue": "^7.4.1",
-    "remark-mdx": "^3.1.0"
+    "remark-mdx": "^3.1.0",
+    "zod-to-json-schema": "^3.24.1"
   },
   "devDependencies": {
+    "@ai-sdk/provider": "^1.0.3",
+    "@ai-sdk/provider-utils": "^2.0.5",
+    "@ai-sdk/ui-utils": "^1.0.6",
     "@eslint/js": "^9.17.0",
+    "@opentelemetry/api": "^1.9.0",
     "@semantic-release/commit-analyzer": "^13.0.0",
     "@semantic-release/github": "^11.0.1",
     "@semantic-release/npm": "^12.0.1",
@@ -71,6 +75,7 @@
     "@types/ink-spinner": "^3.0.4",
     "@types/ink-testing-library": "^1.0.4",
     "@types/js-yaml": "^4.0.9",
+    "@types/json-schema": "^7.0.15",
     "@types/listr": "^0.14.9",
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.10.2",
@@ -86,7 +91,8 @@
     "react": "18.3.1",
     "semantic-release": "^24.2.0",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "zod": "^3.24.1"
   },
   "engines": {
     "node": ">=18.0.0"
