@@ -82,9 +82,9 @@ interface AIFunctionResult {
   [key: string]: unknown
 }
 
-interface AIFunctionData extends MDXLDData {
-  model?: string
-  system?: string
+interface AIFunctionData {
+  model: string
+  system: string
   output?: Record<string, unknown>
   schema?: JSONSchema7
 }
@@ -138,20 +138,18 @@ export const ai: Record<string, (args?: Record<string, unknown>) => Promise<AIFu
         // Read and parse the MDX file
         const content = await readFile(filePath)
         let mdxData: AIFunctionData
-        const parseOptions: ParseOptions = {
-          ast: true,
-          allowAtPrefix: true
-        }
         
         try {
-          const parsed = parse(content, parseOptions)
-          if (!parsed || !parsed.data) {
+          const parsed = parse(content)
+          if (!parsed || typeof parsed !== 'object' || !('data' in parsed)) {
             result.error = 'Invalid MDX file: No frontmatter found'
             return result
           }
           
-          // Extract frontmatter data
-          const { model, system, schema } = parsed.data
+          const data = parsed.data as Record<string, unknown>
+          const model = data.model as string | undefined
+          const system = data.system as string | undefined
+          const schema = data.schema as JSONSchema7 | undefined
           
           if (!model || !system) {
             result.error = 'Missing required frontmatter fields: model and system'
@@ -162,7 +160,7 @@ export const ai: Record<string, (args?: Record<string, unknown>) => Promise<AIFu
             model,
             system,
             schema
-          } as AIFunctionData
+          }
         } catch (error: unknown) {
           const errorMessage = error instanceof Error ? error.message : String(error)
           result.error = `Failed to process AI function: ${errorMessage}`
