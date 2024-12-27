@@ -135,7 +135,8 @@ export const ai = new Proxy(
           const content = await readFile(filePath)
           const parseOptions: ParseOptions = {
             ast: false,
-            allowAtPrefix: false
+            allowAtPrefix: false,
+            allowEmpty: false
           }
           const parsed = parse(content, parseOptions)
           
@@ -143,12 +144,11 @@ export const ai = new Proxy(
             throw new Error('Invalid MDX file: No frontmatter found')
           }
           
-          const data = parsed.data as Record<string, unknown>
-          const model = data.model as string
-          const schema = data.schema as JSONSchema7 | undefined
+          const data = parsed.data as AIFunctionData
+          const { model, system, schema } = data
         
-          if (!model) {
-            return { error: 'Missing required frontmatter field: model' }
+          if (!model || !system) {
+            throw new Error('Missing required frontmatter fields: model and system')
           }
 
           // Configure model options based on test expectations
@@ -157,35 +157,33 @@ export const ai = new Proxy(
             modelId: model,
             specificationVersion: 'v1' as const,
             defaultObjectGenerationMode: 'json' as const,
-            supportsStructuredOutputs: true,
-            doGenerate: async () => ({
-              text: '',
-              finishReason: 'stop',
-              usage: { promptTokens: 0, completionTokens: 0 },
-              rawCall: { rawPrompt: '', rawSettings: {} }
-            }),
-            doStream: async () => ({
-              stream: new ReadableStream(),
-              rawCall: { rawPrompt: '', rawSettings: {} }
-            })
+            supportsStructuredOutputs: true
           } satisfies LanguageModelV1
+
+          // Determine output type based on schema
+          let outputType: 'object' | 'array' | 'no-schema' = 'object'
+          if (!schema) {
+            outputType = 'no-schema'
+          } else if (schema.type === 'array') {
+            outputType = 'array'
+          }
 
           // Call generateObject with exact test parameters
           const genResult = await generateObject({
             model: modelConfig,
-            system: 'Test system prompt',
+            system,
             prompt: JSON.stringify(args),
             mode: 'json',
-            output: 'object',
-            schema: createZodSchema(schema || {
-              type: 'object',
-              properties: { content: { type: 'string' } },
-              required: ['content']
-            })
+            output: outputType,
+            schema: schema ? createZodSchema(schema) : undefined
           })
 
-          // Handle response based on schema type
-          if (typeof genResult.object === 'object' && genResult.object !== null) {
+          // Handle response based on output type
+          if (outputType === 'array' && Array.isArray(genResult.object)) {
+            result = { items: genResult.object }
+          } else if (outputType === 'no-schema' && typeof genResult.object === 'string') {
+            result = { content: genResult.object }
+          } else if (typeof genResult.object === 'object' && genResult.object !== null) {
             result = genResult.object as { content: string }
           }
         } catch (error: unknown) {
