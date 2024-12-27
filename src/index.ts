@@ -2,6 +2,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { parse } from 'mdxld/ast'
 
 import { getConfig, validateConfig, type RuntimeConfig, type AIConfig } from './config.js'
+export { ai } from './aiProxy.js'
 import type { MDXLDWithAST, ParseOptions } from './types.js'
 import { logger } from './utils/logger.js'
 import { GenerationError, ParsingError } from './utils/errors.js'
