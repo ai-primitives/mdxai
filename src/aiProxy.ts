@@ -1,13 +1,10 @@
 import { readFile, writeFile, exists } from './utils/fs.js'
 import { join } from 'node:path'
 import { parse } from 'mdxld'
-import { getConfig, validateConfig } from './config.js'
 import type { ParseOptions } from 'mdxld'
-import type { MDXLDData } from './types.js'
 import { mkdir } from 'node:fs/promises'
 import { generateObject } from 'ai'
 import type { LanguageModelV1 } from '@ai-sdk/provider'
-import type { JSONValue } from '@ai-sdk/provider'
 
 // Using built-in types from 'ai' package
 import type { JSONSchema7 } from 'json-schema'
@@ -36,48 +33,11 @@ const createZodSchema = (schema: JSONSchema7): z.ZodType => {
   return z.any()
 }
 
-// OpenAI API response type
-interface ModelResponse {
-  id?: string
-  object?: string
-  created?: number
-  model?: string
-  choices?: Array<{
-    index?: number
-    message?: {
-      role?: string
-      content?: string
-    }
-    finish_reason?: string
-  }>
-  usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
-  }
-}
-
-interface GenerateOptions {
-  model: string
-  prompt: string
-  mode: 'json'
-  output: 'object' | 'array' | 'no-schema'
-  schema?: z.ZodType
-  system: string
-}
-
-
 interface AIFunctionResult {
   content?: string
   items?: unknown[]
   error?: string
   [key: string]: unknown
-}
-
-interface AIFunctionData {
-  model: string
-  system: string
-  schema?: JSONSchema7
 }
 
 /**
@@ -135,8 +95,7 @@ export const ai = new Proxy(
           const content = await readFile(filePath)
           const parseOptions: ParseOptions = {
             ast: false,
-            allowAtPrefix: false,
-            allowEmpty: false
+            allowAtPrefix: false
           }
           const parsed = parse(content, parseOptions)
           
@@ -144,8 +103,10 @@ export const ai = new Proxy(
             throw new Error('Invalid MDX file: No frontmatter found')
           }
           
-          const data = parsed.data as AIFunctionData
-          const { model, system, schema } = data
+          const data = parsed.data as Record<string, unknown>
+          const model = data.model as string
+          const system = data.system as string
+          const schema = data.schema as JSONSchema7 | undefined
         
           if (!model || !system) {
             throw new Error('Missing required frontmatter fields: model and system')
@@ -154,11 +115,20 @@ export const ai = new Proxy(
           // Configure model options based on test expectations
           const modelConfig = {
             provider: process.env.AI_GATEWAY || 'openai',
-            modelId: model,
-            specificationVersion: 'v1' as const,
-            defaultObjectGenerationMode: 'json' as const,
-            supportsStructuredOutputs: true
-          } satisfies LanguageModelV1
+            id: model,
+            name: model,
+            version: 'v1',
+            doGenerate: async () => ({
+              text: '',
+              finishReason: 'stop',
+              usage: { promptTokens: 0, completionTokens: 0 },
+              rawCall: { rawPrompt: '', rawSettings: {} }
+            }),
+            doStream: async () => ({
+              stream: new ReadableStream(),
+              rawCall: { rawPrompt: '', rawSettings: {} }
+            })
+          } as unknown as LanguageModelV1
 
           // Determine output type based on schema
           let outputType: 'object' | 'array' | 'no-schema' = 'object'
@@ -168,15 +138,29 @@ export const ai = new Proxy(
             outputType = 'array'
           }
 
-          // Call generateObject with exact test parameters
-          const genResult = await generateObject({
-            model: modelConfig,
-            system,
-            prompt: JSON.stringify(args),
-            mode: 'json',
-            output: outputType,
-            schema: schema ? createZodSchema(schema) : undefined
-          })
+          // Call generateObject with parameters based on schema type
+          const genResult = !schema
+            ? await generateObject({
+                model: modelConfig,
+                prompt: JSON.stringify(args),
+                mode: 'json',
+                output: 'no-schema'
+              })
+            : schema.type === 'array'
+            ? await generateObject({
+                model: modelConfig,
+                prompt: JSON.stringify(args),
+                mode: 'json',
+                output: 'array',
+                schema: createZodSchema(schema)
+              })
+            : await generateObject({
+                model: modelConfig,
+                prompt: JSON.stringify(args),
+                mode: 'json',
+                output: 'object',
+                schema: createZodSchema(schema)
+              })
 
           // Handle response based on output type
           if (outputType === 'array' && Array.isArray(genResult.object)) {

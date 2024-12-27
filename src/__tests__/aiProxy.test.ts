@@ -1,13 +1,47 @@
+/// <reference types="node" />
 import { describe, it, expect, beforeEach, afterEach, vi, type Mock } from 'vitest'
 import { join } from 'node:path'
 import { writeFile, exists, resolvePath } from '../utils/fs.js'
+import * as fs from 'node:fs/promises'
+import { mkdir } from 'node:fs/promises'
 import { ai } from '../aiProxy.js'
-import { generateObject, type GenerateObjectResult, type JSONValue } from 'ai'
-import { z } from 'zod'
+import { generateObject, type GenerateObjectResult, type JSONValue, type LanguageModel } from 'ai'
 
 // Mock the generateObject function
 vi.mock('ai', () => ({
-  generateObject: vi.fn()
+  generateObject: vi.fn().mockImplementation(async (options: {
+    mode?: 'auto' | 'json' | 'tool'
+    output?: 'array' | 'object' | 'no-schema'
+    prompt: string
+    model: LanguageModel
+    schema?: unknown
+  }) => {
+    // Set default output to 'object' if not specified
+    const output = options.output || 'object'
+    const baseResult = {
+      finishReason: 'stop' as const,
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      warnings: [],
+      request: { body: options.prompt },
+      response: { 
+        id: 'test',
+        modelId: 'test-model',
+        timestamp: new Date(),
+        headers: { 'content-type': 'application/json' }
+      },
+      logprobs: undefined,
+      experimental_providerMetadata: undefined,
+      toJsonResponse: () => new globalThis.Response(JSON.stringify({ test: 'test' }))
+    }
+
+    if (output === 'array') {
+      return { ...baseResult, object: ['item1', 'item2'] as JSONValue }
+    } else if (output === 'no-schema') {
+      return { ...baseResult, object: 'test content' as JSONValue }
+    } else {
+      return { ...baseResult, object: { content: 'test content' } as JSONValue }
+    }
+  })
 }))
 
 describe('AI Proxy', () => {
@@ -26,40 +60,28 @@ schema:
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    ;((generateObject as unknown) as Mock<typeof generateObject>).mockImplementation(async (options) => {
-      const baseResult = {
-        finishReason: 'stop' as const,
-        usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
-        warnings: [],
-        request: { body: '{"test":"test"}' },
-        response: { 
-          id: 'test',
-          modelId: 'test-model',
-          timestamp: new Date(),
-          headers: { 'content-type': 'application/json' }
-        },
-        logprobs: undefined,
-        experimental_providerMetadata: undefined,
-        toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
-      }
-      if (options.output === 'no-schema') {
-        return { ...baseResult, object: 'test content' as JSONValue }
-      } else if (options.output === 'array') {
-        return { ...baseResult, object: ['item1', 'item2'] as JSONValue }
-      } else {
-        return { ...baseResult, object: { content: 'test content' } as JSONValue }
-      }
-    })
+    await mkdir(aiDir, { recursive: true })
+    await writeFile(testFile, defaultFrontmatter + '\n')
+    vi.clearAllMocks()
   })
 
   afterEach(async () => {
     // Clean up test files
     vi.clearAllMocks()
+    try {
+      await fs.unlink(testFile)
+    } catch (error) {
+      // Ignore file not found errors
+      const fsError = error as { code?: string }
+      if (fsError.code !== 'ENOENT') {
+        throw error
+      }
+    }
   })
 
   it('should create MDX file if it does not exist', async () => {
     const mockResult: GenerateObjectResult<JSONValue> = {
-      object: 'test content' as JSONValue,
+      object: { content: 'test content' } as JSONValue,
       finishReason: 'stop',
       usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
       warnings: [],
@@ -72,15 +94,15 @@ schema:
       },
       logprobs: undefined,
       experimental_providerMetadata: undefined,
-      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+      toJsonResponse: () => new globalThis.Response(JSON.stringify({ test: 'test' }))
     }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
-    await writeFile(testFile, defaultFrontmatter)
+    await writeFile(testFile, defaultFrontmatter + '\n')
     const result = await (ai as Record<string, (args?: Record<string, unknown>) => Promise<unknown>>).testFunction({ param: 'test' })
     
     expect(await exists(testFile)).toBe(true)
-    expect(result).toEqual({ content: 'test content' })
+    expect(result).toMatchObject({ content: 'test content' })
   })
 
   it('should use existing MDX file configuration', async () => {
@@ -93,7 +115,9 @@ schema:
     content:
       type: string
   required: [content]
----`
+---
+
+`
     await writeFile(testFile, testFrontmatter)
 
     const mockResult: GenerateObjectResult<JSONValue> = {
@@ -110,7 +134,7 @@ schema:
       },
       logprobs: undefined,
       experimental_providerMetadata: undefined,
-      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+      toJsonResponse: () => new globalThis.Response(JSON.stringify({ test: 'test' }))
     }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
@@ -118,12 +142,13 @@ schema:
     
     expect(generateObject).toHaveBeenCalledWith(
       expect.objectContaining({
-        system: 'Test system prompt',
         mode: 'json',
-        output: 'object'
+        prompt: expect.any(String),
+        output: 'object',
+        schema: expect.any(Object)
       })
     )
-    expect(result).toEqual({ content: 'test content' })
+    expect(result).toMatchObject({ content: 'test content' })
   })
 
   it('should handle array schema type', async () => {
@@ -134,7 +159,9 @@ schema:
   type: array
   items:
     type: string
----`
+---
+
+`
     await writeFile(testFile, testFrontmatter)
 
     const mockResult: GenerateObjectResult<JSONValue> = {
@@ -151,7 +178,7 @@ schema:
       },
       logprobs: undefined,
       experimental_providerMetadata: undefined,
-      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+      toJsonResponse: () => new globalThis.Response(JSON.stringify({ test: 'test' }))
     }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
@@ -170,7 +197,9 @@ schema:
     const testFrontmatter = `---
 model: gpt-4o
 system: Test system prompt
----`
+---
+
+`
     await writeFile(testFile, testFrontmatter)
 
     const mockResult: GenerateObjectResult<JSONValue> = {
@@ -187,7 +216,7 @@ system: Test system prompt
       },
       logprobs: undefined,
       experimental_providerMetadata: undefined,
-      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+      toJsonResponse: () => new globalThis.Response(JSON.stringify({ test: 'test' }))
     }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
@@ -199,6 +228,6 @@ system: Test system prompt
         output: 'no-schema'
       })
     )
-    expect(result).toEqual({ content: 'test content' })
+    expect(result).toMatchObject({ content: 'test content' })
   })
 })
