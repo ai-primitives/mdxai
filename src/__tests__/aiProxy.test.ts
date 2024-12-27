@@ -16,9 +16,9 @@ describe('AI Proxy', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks()
-    ;((generateObject as unknown) as Mock<typeof generateObject>).mockImplementation(async ({ model, schema, output, maxTokens, temperature, topP, topK, presencePenalty, frequencyPenalty, seed, maxRetries, abortSignal, headers, experimental_telemetry }) => {
+    ;((generateObject as unknown) as Mock<typeof generateObject>).mockImplementation(async (options) => {
       const baseResult = {
-        finishReason: 'stop',
+        finishReason: 'stop' as const,
         usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
         warnings: [],
         request: { body: '{"test":"test"}' },
@@ -32,9 +32,9 @@ describe('AI Proxy', () => {
         experimental_providerMetadata: undefined,
         toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
       }
-      if (output === 'no-schema') {
+      if (options.output === 'no-schema') {
         return { ...baseResult, object: 'test content' as JSONValue }
-      } else if (output === 'array') {
+      } else if (options.output === 'array') {
         return { ...baseResult, object: ['item1', 'item2'] as JSONValue }
       } else {
         return { ...baseResult, object: { content: 'test content' } as JSONValue }
@@ -85,7 +85,22 @@ schema:
 ---`
     await writeFile(testFile, testFrontmatter)
 
-    const mockResult: GenerateObjectResult<JSONValue> = { object: { content: 'test content' } as JSONValue }
+    const mockResult: GenerateObjectResult<JSONValue> = {
+      object: { content: 'test content' } as JSONValue,
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      warnings: [],
+      request: { body: '{"test":"test"}' },
+      response: { 
+        id: 'test',
+        modelId: 'test-model',
+        timestamp: new Date(),
+        headers: { 'content-type': 'application/json' }
+      },
+      logprobs: undefined,
+      experimental_providerMetadata: undefined,
+      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+    }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
     const result = await (ai as Record<string, (args?: Record<string, unknown>) => Promise<unknown>>).testFunction({ param: 'test' })
@@ -111,7 +126,22 @@ schema:
 ---`
     await writeFile(testFile, testFrontmatter)
 
-    const mockResult: GenerateObjectResult<JSONValue> = { object: ['item1', 'item2'] as JSONValue }
+    const mockResult: GenerateObjectResult<JSONValue> = {
+      object: ['item1', 'item2'] as JSONValue,
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      warnings: [],
+      request: { body: '{"test":"test"}' },
+      response: { 
+        id: 'test',
+        modelId: 'test-model',
+        timestamp: new Date(),
+        headers: { 'content-type': 'application/json' }
+      },
+      logprobs: undefined,
+      experimental_providerMetadata: undefined,
+      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+    }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
     const result = await (ai as Record<string, (args?: Record<string, unknown>) => Promise<unknown>>).testFunction({ param: 'test' })
@@ -132,7 +162,22 @@ system: Test system prompt
 ---`
     await writeFile(testFile, testFrontmatter)
 
-    const mockResult: GenerateObjectResult<JSONValue> = { object: 'test content' as JSONValue }
+    const mockResult: GenerateObjectResult<JSONValue> = {
+      object: 'test content' as JSONValue,
+      finishReason: 'stop',
+      usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+      warnings: [],
+      request: { body: '{"test":"test"}' },
+      response: { 
+        id: 'test',
+        modelId: 'test-model',
+        timestamp: new Date(),
+        headers: { 'content-type': 'application/json' }
+      },
+      logprobs: undefined,
+      experimental_providerMetadata: undefined,
+      toJsonResponse: () => new Response(JSON.stringify({ test: 'test' }))
+    }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
     const result = await (ai as Record<string, (args?: Record<string, unknown>) => Promise<unknown>>).testFunction({ param: 'test' })

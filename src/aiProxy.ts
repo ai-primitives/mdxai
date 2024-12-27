@@ -410,15 +410,32 @@ export const ai: Record<string, (args?: Record<string, unknown>) => Promise<AIFu
           const output: 'object' | 'array' | 'no-schema' = 
             jsonSchema && 'type' in jsonSchema && jsonSchema.type === 'array' ? 'array' :
             jsonSchema ? 'object' : 'no-schema';
-          const genResult = await generateObject({
+          let genResult;
+          const baseOptions = {
             model: modelAdapter,
             messages,
             mode: 'json' as const,
-            output,
-            ...(zodSchema ? { schema: zodSchema } : {}),
             temperature: 0.7,
             maxTokens: 2048
-          });
+          };
+
+          if (!zodSchema || output === 'no-schema') {
+            genResult = await generateObject({
+              ...baseOptions,
+              output: 'no-schema' as const
+            });
+          } else if (output === 'array') {
+            genResult = await generateObject({
+              ...baseOptions,
+              output: 'array' as const,
+              schema: zodSchema as z.ZodType<unknown[]>
+            });
+          } else {
+            genResult = await generateObject({
+              ...baseOptions,
+              schema: zodSchema as z.ZodType<Record<string, unknown>>
+            });
+          }
           const response = genResult.object;
 
           // Format result based on output type
