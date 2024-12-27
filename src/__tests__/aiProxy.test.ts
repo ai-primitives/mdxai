@@ -13,6 +13,16 @@ vi.mock('ai', () => ({
 describe('AI Proxy', () => {
   const aiDir = resolvePath(process.cwd(), 'ai')
   const testFile = join(aiDir, 'testFunction.mdx')
+  const defaultFrontmatter = `---
+model: gpt-4o
+system: Test system prompt
+schema:
+  type: object
+  properties:
+    content:
+      type: string
+  required: [content]
+---`
 
   beforeEach(async () => {
     vi.clearAllMocks()
@@ -66,6 +76,7 @@ describe('AI Proxy', () => {
     }
     ;((generateObject as unknown) as Mock<typeof generateObject>).mockResolvedValue(mockResult)
 
+    await writeFile(testFile, defaultFrontmatter)
     const result = await (ai as Record<string, (args?: Record<string, unknown>) => Promise<unknown>>).testFunction({ param: 'test' })
     
     expect(await exists(testFile)).toBe(true)

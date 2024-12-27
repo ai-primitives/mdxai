@@ -150,18 +150,24 @@ export const ai: Record<string, (args?: Record<string, unknown>) => Promise<AIFu
 
         // Read and parse the MDX file
         const content = await readFile(filePath)
+        let mdxData: AIFunctionData
         const parseOptions: ParseOptions = {
           ast: true,
-          allowAtPrefix: true,
+          allowAtPrefix: true
         }
         
-        const ast = parse(content, parseOptions)
-        if (!ast.data) {
-          result.error = 'Invalid MDX file: No frontmatter found'
+        try {
+          const ast = parse(content, parseOptions)
+          if (!ast.data) {
+            result.error = 'Invalid MDX file: No frontmatter found'
+            return result
+          }
+          mdxData = ast.data as AIFunctionData
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          result.error = `Failed to process AI function: ${errorMessage}`
           return result
         }
-
-        const mdxData = ast.data as AIFunctionData
         
         // Get AI configuration
         const config = getConfig()
@@ -302,55 +308,55 @@ export const ai: Record<string, (args?: Record<string, unknown>) => Promise<AIFu
           doStream: async (options: LanguageModelV1CallOptions) => {
             try {
               const response = await fetch(`${baseURL}/v1/chat/completions`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`,
-                ...(options.headers || {})
-              },
-              body: JSON.stringify({
-                model: selectedModel,
-                messages: options.prompt.map((msg) => ({
-                  role: msg.role,
-                  content: msg.role === 'system'
-                    ? msg.content
-                    : Array.isArray(msg.content)
-                      ? msg.content.map((part) => {
-                          if ('type' in part && part.type === 'text') return part.text
-                          return ''
-                        }).join('')
-                      : ''
-                })),
-                temperature: options.temperature ?? 0.7,
-                max_tokens: options.maxTokens ?? 2048,
-                top_p: options.topP,
-                frequency_penalty: options.frequencyPenalty,
-                presence_penalty: options.presencePenalty,
-                stop: options.stopSequences,
-                stream: true,
-                response_format: { type: 'json_object' }
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${apiKey}`,
+                  ...(options.headers || {})
+                },
+                body: JSON.stringify({
+                  model: selectedModel,
+                  messages: options.prompt.map((msg) => ({
+                    role: msg.role,
+                    content: msg.role === 'system'
+                      ? msg.content
+                      : Array.isArray(msg.content)
+                        ? msg.content.map((part) => {
+                            if ('type' in part && part.type === 'text') return part.text
+                            return ''
+                          }).join('')
+                        : ''
+                  })),
+                  temperature: options.temperature ?? 0.7,
+                  max_tokens: options.maxTokens ?? 2048,
+                  top_p: options.topP,
+                  frequency_penalty: options.frequencyPenalty,
+                  presence_penalty: options.presencePenalty,
+                  stop: options.stopSequences,
+                  stream: true,
+                  response_format: { type: 'json_object' }
+                })
               })
-            })
 
-            if (!response.ok) {
-              throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
-            }
+              if (!response.ok) {
+                throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+              }
 
-            return {
-              stream: response.body as ReadableStream<LanguageModelV1StreamPart>,
-              rawCall: {
-                rawPrompt: options.prompt,
-                rawSettings: {
-                  temperature: options.temperature,
-                  maxTokens: options.maxTokens,
-                  mode: options.mode
+              return {
+                stream: response.body as ReadableStream<LanguageModelV1StreamPart>,
+                rawCall: {
+                  rawPrompt: options.prompt,
+                  rawSettings: {
+                    temperature: options.temperature,
+                    maxTokens: options.maxTokens,
+                    mode: options.mode
+                  }
                 }
               }
+            } catch (err) {
+              throw new Error(`Stream error: ${(err as Error).message}`);
             }
-          } catch (err) {
-            throw new Error(`Stream error: ${(err as Error).message}`);
           }
-        }
       };
 
       try {
